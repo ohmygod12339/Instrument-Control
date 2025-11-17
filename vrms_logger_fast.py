@@ -9,14 +9,29 @@ Features:
 - Uses scope's built-in VRMS measurement (faster)
 - Reads continuously-updated measurement value
 - No trigger wait - reads current displayed value
+- Configurable timebase for optimal measurement speed
 - Buffered writes for performance
 - Precise 100ms timing
 
 Usage:
-    python vrms_logger_fast.py <RESOURCE_STRING>
+    python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms]
+
+Arguments:
+    RESOURCE_STRING: VISA resource string for the oscilloscope (required)
+    save_interval: Number of measurements before saving to disk (default: 50)
+    timebase_ms: Oscilloscope timebase in milliseconds/div (default: 10)
+                 Shorter timebase = faster measurements
+                 Recommended: 5-20 ms/div for AC signals
 
 Example:
+    # Use default settings (10 ms/div timebase)
     python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR"
+
+    # Custom save interval and 5 ms/div timebase for fastest measurements
+    python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 100 5
+
+    # 20 ms/div timebase for more stable measurements
+    python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 50 20
 """
 
 import sys
@@ -35,7 +50,7 @@ class FastVrmsLogger:
     """Fast real-time Vrms data logger using scope's built-in measurements."""
 
     def __init__(self, resource_string: str, results_dir: str = "results",
-                 save_interval: int = 50):
+                 save_interval: int = 50, timebase_scale: float = 0.01):
         """
         Initialize the fast Vrms logger.
 
@@ -43,10 +58,14 @@ class FastVrmsLogger:
             resource_string: VISA resource string for the oscilloscope
             results_dir: Directory to save result files (default: "results")
             save_interval: Number of measurements before saving to disk (default: 50)
+            timebase_scale: Oscilloscope timebase in seconds/div (default: 0.01 = 10ms/div)
+                           Shorter timebase = faster measurements
+                           Recommended: 0.005 (5ms/div) to 0.02 (20ms/div) for AC signals
         """
         self.resource_string = resource_string
         self.results_dir = Path(results_dir)
         self.save_interval = save_interval
+        self.timebase_scale = timebase_scale
         self.scope = None
         self.workbook = None
         self.worksheet = None
@@ -70,6 +89,13 @@ class FastVrmsLogger:
 
         # Ensure Channel 1 is on
         self.scope.channel_on(1)
+
+        # CRITICAL: Set timebase for fast measurements
+        # Shorter timebase = less data to capture = faster measurements
+        print(f"Setting timebase to {self.timebase_scale*1000:.1f} ms/div...")
+        self.scope.set_timebase_scale(self.timebase_scale)
+        current_timebase = self.scope.get_timebase_scale()
+        print(f"  Timebase confirmed: {current_timebase*1000:.1f} ms/div ({current_timebase*10*1000:.1f} ms total window)")
 
         # Set oscilloscope to RUN mode for continuous acquisition
         self.scope.run()
@@ -100,6 +126,7 @@ class FastVrmsLogger:
 
         print(f"Successfully connected and configured!")
         print(f"  Channel 1: ON")
+        print(f"  Timebase: {current_timebase*1000:.1f} ms/div")
         print(f"  Mode: RUN (continuous)")
         print(f"  Measurement: VRMS (built-in)")
 
@@ -276,14 +303,20 @@ def main():
     if len(sys.argv) < 2:
         print("Error: VISA resource string required")
         print("\nUsage:")
-        print("  python vrms_logger_fast.py <RESOURCE_STRING> [save_interval]")
-        print("\nExample:")
+        print("  python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms]")
+        print("\nArguments:")
+        print("  RESOURCE_STRING: VISA resource string (required)")
+        print("  save_interval: Number of measurements before saving (default: 50)")
+        print("  timebase_ms: Timebase in ms/div (default: 10)")
+        print("               Shorter = faster, Recommended: 5-20 ms/div")
+        print("\nExamples:")
         print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR"')
-        print('  python vrms_logger_fast.py "USB0::0x0957::0x17A6::MY12345678::INSTR" 100')
+        print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 100 5')
         sys.exit(1)
 
     resource_string = sys.argv[1]
 
+    # Parse save_interval (argument 2)
     save_interval = 50
     if len(sys.argv) >= 3:
         try:
@@ -291,9 +324,20 @@ def main():
         except ValueError:
             print(f"Warning: Invalid save_interval '{sys.argv[2]}', using default: 50")
 
+    # Parse timebase_ms (argument 3)
+    timebase_scale = 0.01  # Default: 10 ms/div = 0.01 s/div
+    if len(sys.argv) >= 4:
+        try:
+            timebase_ms = float(sys.argv[3])
+            timebase_scale = timebase_ms / 1000.0  # Convert ms to seconds
+            print(f"Using timebase: {timebase_ms} ms/div ({timebase_scale} s/div)")
+        except ValueError:
+            print(f"Warning: Invalid timebase_ms '{sys.argv[3]}', using default: 10 ms/div")
+
     signal.signal(signal.SIGINT, signal_handler)
 
-    logger = FastVrmsLogger(resource_string, save_interval=save_interval)
+    logger = FastVrmsLogger(resource_string, save_interval=save_interval,
+                           timebase_scale=timebase_scale)
 
     try:
         logger.connect()
