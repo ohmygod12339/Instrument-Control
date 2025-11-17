@@ -1,0 +1,22 @@
+# Instrument Control Project Dependencies
+# Python 3.8+
+
+# VISA communication
+pyvisa>=1.15.0
+pyvisa-py>=0.8.1
+
+# Data processing
+numpy>=1.24.0
+
+# Excel file operations
+openpyxl>=3.1.0
+
+# Optional: For plotting waveforms
+matplotlib>=3.7.0
+
+# Optional: For data analysis
+# pandas>=2.0.0
+# scipy>=1.10.0
+
+# Type checking (development)
+typing-extensions>=4.0.0

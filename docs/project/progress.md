@@ -1,0 +1,187 @@
+# 專案進度追蹤 / Project Progress
+
+## 當前狀態 / Current Status
+
+**專案階段**: 初始開發 / Initial Development
+**狀態**: 進行中 / In Progress
+**更新時間**: 2025-11-17
+
+目前正在建立專案基礎架構和第一個儀器控制模組 (DSOX4034A)。
+
+Currently establishing project infrastructure and first instrument control module (DSOX4034A).
+
+## 專案目標 / Project Goals
+
+1. 建立 Python 儀器控制專案架構
+2. 透過 USB 或 Ethernet 控制實驗室儀器
+3. 使用 VISA 或其他通訊協定讀取/設定儀器參數
+4. 為每個儀器建立獨立的 Python 模組 (使用類別)
+5. 從 Keysight DSOX4034A 示波器開始實作
+
+---
+
+1. Establish Python instrument control project architecture
+2. Control laboratory instruments via USB or Ethernet
+3. Use VISA or other protocols to read/write instrument parameters
+4. Create individual Python modules for each instrument (using classes)
+5. Start implementation with Keysight DSOX4034A oscilloscope
+
+## 已完成階段 / Completed Phases
+
+### Phase 1: 專案初始化 / Project Initialization (✅ 2025-11-17)
+
+**完成項目**:
+- [x] 建立 Python 虛擬環境 (.venv)
+- [x] 安裝基礎依賴套件 (PyVISA, PyVISA-py, NumPy)
+- [x] 建立專案資料夾結構
+- [x] 研究 Keysight DSOX4034A API 和函式庫
+- [x] 建立專案文件架構 (CLAUDE.md, progress.md, journal.md, todo.md)
+
+**Completed Items**:
+- [x] Set up Python virtual environment (.venv)
+- [x] Install base dependencies (PyVISA, PyVISA-py, NumPy)
+- [x] Create project folder structure
+- [x] Research Keysight DSOX4034A APIs and libraries
+- [x] Create project documentation architecture
+
+**技術決策**:
+- 使用 PyVISA + PyVISA-py (純 Python 後端，無需安裝 VISA 函式庫)
+- 採用類別導向設計，每個儀器一個模組
+- 參考 Keysight 官方 SCPI 程式設計指南
+
+**Technical Decisions**:
+- Use PyVISA + PyVISA-py (pure Python backend, no VISA libraries required)
+- Adopt class-oriented design, one module per instrument
+- Reference Keysight official SCPI programming guide
+
+## 進行中階段 / Current Phases
+
+### Phase 2: DSOX4034A 模組實作 / DSOX4034A Module Implementation (✅ Completed 2025-11-17)
+
+**完成項目**:
+- [x] 建立 DSOX4034A 儀器類別
+  - [x] 連線管理 (USB/Ethernet)
+  - [x] 基本讀取功能 (讀取儀器資訊、狀態)
+  - [x] 參數設定功能 (時間軸、電壓軸、觸發)
+  - [x] 量測功能 (波形擷取、量測值讀取)
+  - [x] 錯誤處理
+- [x] 建立使用範例腳本
+- [x] 建立即時 Vrms 資料記錄器
+
+**Completed Items**:
+- [x] Create DSOX4034A instrument class
+  - [x] Connection management (USB/Ethernet)
+  - [x] Basic read functions (read instrument info, status)
+  - [x] Parameter setting functions (timebase, voltage, trigger)
+  - [x] Measurement functions (waveform acquisition, measurement readings)
+  - [x] Error handling
+- [x] Create example usage scripts
+- [x] Create real-time Vrms data logger
+
+### Phase 3: 即時資料記錄應用 / Real-Time Data Logging Applications (✅ Completed 2025-11-17)
+
+**完成項目**:
+- [x] 實作 Vrms 即時資料記錄器 (vrms_logger.py)
+  - [x] 每 100ms 讀取 Channel 1 Vrms
+  - [x] 記錄時間戳記 (HH:MM:SS:MSMSMS 格式)
+  - [x] 即時寫入 Excel 檔案
+  - [x] 每 5 分鐘複製到 FINAL 檔案 (允許即時檢視不中斷記錄)
+- [x] 安裝 openpyxl 套件
+- [x] 建立 results 資料夾結構
+- [x] 建立使用範例
+
+**Completed Items**:
+- [x] Implement real-time Vrms data logger (vrms_logger.py)
+  - [x] Read Channel 1 Vrms every 100ms
+  - [x] Record timestamps (HH:MM:SS:MSMSMS format)
+  - [x] Write to Excel in real-time
+  - [x] Copy to FINAL file every 5 minutes (allows viewing without interruption)
+- [x] Install openpyxl package
+- [x] Create results folder structure
+- [x] Create usage example
+
+## 下一步計畫 / Next Steps
+
+1. 測試 Vrms 資料記錄器功能
+2. 根據實際使用情況優化記錄器效能
+3. 考慮新增更多量測參數 (Vpp, Freq, etc.)
+4. 開發其他儀器控制模組
+5. 建立完整的測試套件
+
+---
+
+1. Test Vrms data logger functionality
+2. Optimize logger performance based on real usage
+3. Consider adding more measurement parameters (Vpp, Freq, etc.)
+4. Develop control modules for other instruments
+5. Create comprehensive test suite
+
+## 技術債務與未來改進 / Technical Debt
+
+- 待後續新增更多儀器時，可考慮建立共用基礎類別
+- 需要建立完整的單元測試
+- 考慮新增日誌記錄功能
+
+---
+
+- Consider creating shared base class when adding more instruments
+- Need to establish comprehensive unit tests
+- Consider adding logging functionality
+
+## 風險與挑戰 / Risks and Challenges
+
+1. **儀器連線穩定性**: 需要確保 USB/Ethernet 連線的可靠性和錯誤恢復
+2. **SCPI 命令相容性**: 不同韌體版本可能有命令差異
+3. **效能考量**: 大量資料擷取時的效能優化
+
+---
+
+1. **Instrument connection stability**: Need to ensure USB/Ethernet connection reliability and error recovery
+2. **SCPI command compatibility**: Different firmware versions may have command variations
+3. **Performance considerations**: Performance optimization for large data acquisition
+
+## 參考資源 / Reference Resources
+
+### Keysight DSOX4034A 官方文件 / Official Documentation
+
+- [Keysight InfiniiVision 4000 X-Series Programmer's Guide (PDF)](https://www.keysight.com/us/en/assets/9018-06976/programming-guides/9018-06976.pdf)
+- [Alternative: Batronix PDF](https://www.batronix.com/files/Keysight/Oszilloskope/4000X/4000X-Programming.pdf)
+
+### Python 函式庫 / Python Libraries
+
+- [PyVISA Documentation](https://pyvisa.readthedocs.io/)
+- [keyoscacquire - Keysight Oscilloscope Acquire Package](https://keyoscacquire.readthedocs.io/)
+- [oscope-scpi - GitHub](https://github.com/sgoadhouse/oscope-scpi)
+- [Keysight Official Python Guide](https://docs.keysight.com/kkbopen/getting-started-automate-keysight-instruments-using-python-3-9-845872587.html)
+
+## 更新日誌 / Update Log
+
+### 2025-11-17 (Evening Update)
+- 完成 Vrms 即時資料記錄器實作
+- 安裝 openpyxl 套件用於 Excel 操作
+- 建立 vrms_logger.py 主程式
+- 建立使用範例 (vrms_logger_example.py)
+- 實作雙檔案系統 (主記錄檔 + FINAL 檔案)
+- DSOX4034A 模組已可用於實際量測應用
+
+---
+
+- Completed real-time Vrms data logger implementation
+- Installed openpyxl package for Excel operations
+- Created vrms_logger.py main program
+- Created usage example (vrms_logger_example.py)
+- Implemented dual-file system (main log + FINAL file)
+- DSOX4034A module now ready for practical measurement applications
+
+### 2025-11-17 (Initial)
+- 專案初始化完成
+- 建立專案架構和文件系統
+- 安裝必要依賴套件
+- 研究完成 DSOX4034A API 和資源
+
+---
+
+- Project initialization completed
+- Established project architecture and documentation system
+- Installed necessary dependencies
+- Completed DSOX4034A API and resource research
