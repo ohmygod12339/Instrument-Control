@@ -35,21 +35,33 @@ User Python Script
 
 ```
 ./
+├── PAPAPIN_*_*.py           # Main project scripts (see naming convention below)
+├── GENERAL_*_*.py           # General utility scripts
+│
 ├── instruments/              # Individual instrument modules
 │   ├── __init__.py          # Package initialization
+│   ├── base_logger.py       # Base class for data loggers (IMPORTANT)
 │   ├── keysight/            # Keysight instruments
 │   │   ├── __init__.py
 │   │   └── dsox4034a.py     # DSOX4034A oscilloscope class
-│   └── ...                  # Other manufacturers
+│   ├── agilent/             # Agilent instruments
+│   │   ├── __init__.py
+│   │   └── a34405a.py       # 34405A DMM class
+│   └── digilent/            # Digilent instruments
+│       ├── __init__.py
+│       └── analog_discovery2.py  # AD2 class
 │
 ├── examples/                # Example usage scripts
-│   └── dsox4034a_example.py
+│   └── *.py
+│
+├── results/                 # Output Excel files
 │
 ├── docs/                    # Documentation
 │   ├── project/             # Project tracking and management
 │   │   ├── progress.md      # Current status, roadmap, next steps
 │   │   ├── journal.md       # Historical record, decisions, commits
-│   │   └── todo.md          # Ideas inbox, research topics
+│   │   ├── todo.md          # Ideas inbox, research topics
+│   │   └── development-guide.md  # Coding conventions and standards (IMPORTANT)
 │   │
 │   └── research/            # Technical research reports
 │       └── *.md             # Comprehensive research documents
@@ -59,6 +71,46 @@ User Python Script
 ├── CLAUDE.md               # This file
 └── README.md               # Project README
 ```
+
+## Key Development Conventions
+
+**IMPORTANT: Read `docs/project/development-guide.md` for complete details.**
+
+### Python File Naming Convention
+
+Main scripts follow: `<Project>_<instruments>_<measurements>.py`
+
+Examples:
+- `PAPAPIN_dsox4034a_vrms.py` - Oscilloscope Vrms measurement
+- `PAPAPIN_dsox4034a-ad2_vrms-temp.py` - Oscilloscope + AD2, Vrms + temperature
+- `GENERAL_all_find-instruments.py` - Utility script
+
+### BaseDataLogger Template
+
+All data loggers MUST inherit from `instruments.base_logger.BaseDataLogger` for:
+- Precise timing compensation (not just `time.sleep()`)
+- Buffered Excel output
+- Elapsed time tracking in milliseconds
+- Dual-file system (main + FINAL for viewing)
+
+Required methods to implement:
+- `setup_instrument()` - Connect and configure
+- `read_measurement()` - Read one value, return None on error
+- `cleanup_instrument()` - Disconnect
+- `get_headers()` - Return Excel column headers
+
+### Standard Excel Columns
+
+Every data logger MUST include:
+1. **Timestamp** - Format: `HH:MM:SS:mmm`
+2. **Elapsed Time (ms)** - Milliseconds since test start
+
+### Instrument Module Design
+
+Each instrument class should have:
+- `DEFAULT_RESOURCE` class variable with lab's default address
+- Optional `resource_string` parameter (None = use default)
+- Context manager support (`__enter__`, `__exit__`)
 
 ## Project Language Notes
 

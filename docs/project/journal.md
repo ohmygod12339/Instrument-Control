@@ -6,6 +6,165 @@ This document records important events, decisions, problem-solving, and commit h
 
 ---
 
+## 2025-11-18
+
+### Session - Agilent 34405A 模組新增與 Vrms Logger 改進
+
+**工作內容 / Work Done**:
+
+1. **vrms_logger_fast.py 改進**
+   - 新增 "Elapsed Time (ms)" 欄位
+     - 記錄每次量測相對於測試開始時間的毫秒數
+     - 方便分析時間相關行為
+   - 新增觸發掃描模式設定 (AUTO)
+     - 解決小信號量測速度慢的問題
+   - 新增觸發延遲 (holdoff) 可配置參數
+     - 命令列參數: `holdoff_ms` (預設 20ms)
+
+2. **DSOX4034A 模組新增功能**
+   - `set_trigger_sweep()` / `get_trigger_sweep()` - 設定觸發掃描模式
+   - `set_trigger_holdoff()` / `get_trigger_holdoff()` - 設定觸發延遲時間
+
+3. **Agilent 34405A 數位萬用表模組**
+   - 建立 `instruments/agilent/` 目錄
+   - 實作完整的 A34405A 控制類別
+   - 支援功能:
+     - DC/AC 電壓量測
+     - DC/AC 電流量測
+     - 2 線/4 線電阻量測
+     - 頻率量測
+     - 連續性和二極體測試
+     - 觸發和取樣設定
+     - 顯示控制
+     - NPLC 和自動歸零設定
+
+**技術決策 / Technical Decisions**:
+
+1. **觸發掃描模式選擇 AUTO**
+   - **問題**: 小信號時量測速度慢，大信號時快
+   - **原因**: NORMAL 模式需要等待有效觸發事件
+   - **解決方案**: 使用 AUTO 模式，超時後自動觸發
+   - **效果**: 無論信號大小，量測速度一致
+
+2. **觸發延遲預設 20ms**
+   - 提供足夠時間讓信號穩定
+   - 可透過命令列參數調整
+   - 較短延遲 = 更快量測，但可能不穩定
+
+3. **Agilent 34405A 模組設計**
+   - 遵循與 DSOX4034A 相同的設計模式
+   - 使用 PyVISA-py 後端 (無需安裝 VISA 函式庫)
+   - 僅支援 USB 介面 (34405A 硬體限制)
+
+**程式碼變更 / Code Changes**:
+
+1. `vrms_logger_fast.py`:
+   - 新增 `holdoff_time` 參數
+   - 新增 elapsed time 計算和記錄
+   - 更新命令列參數解析
+   - 更新 Excel 輸出格式 (3 欄位)
+
+2. `instruments/keysight/dsox4034a.py`:
+   - 新增 `set_trigger_sweep()` 方法 (lines 453-465)
+   - 新增 `get_trigger_sweep()` 方法 (lines 467-474)
+   - 新增 `set_trigger_holdoff()` 方法 (lines 476-483)
+   - 新增 `get_trigger_holdoff()` 方法 (lines 485-492)
+
+3. 新增檔案:
+   - `instruments/agilent/__init__.py`
+   - `instruments/agilent/a34405a.py`
+
+**使用方式 / Usage**:
+
+vrms_logger_fast.py 新參數:
+```bash
+python vrms_logger_fast.py <RESOURCE> [save_interval] [timebase_ms] [holdoff_ms]
+
+# 範例: 10ms 延遲
+python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 50 20 10
+```
+
+Agilent 34405A:
+```python
+from instruments.agilent import A34405A
+
+dmm = A34405A("USB0::0x0957::0x0618::MY12345678::INSTR")
+dmm.connect()
+
+# 量測 DC 電壓
+voltage = dmm.measure_dc_voltage()
+print(f"DC Voltage: {voltage} V")
+
+# 量測 AC 電流
+current = dmm.measure_ac_current()
+print(f"AC Current: {current} A")
+
+dmm.disconnect()
+```
+
+**下一步 / Next Steps**:
+- 測試 Agilent 34405A 模組
+- 建立 34405A 使用範例腳本
+- 測試觸發設定對量測速度的影響
+
+### Session 2 - Digilent AD2 模組與專案文件標準化
+
+**工作內容 / Work Done**:
+
+1. **新增 Digilent Analog Discovery 2 模組**
+   - 建立 `instruments/digilent/` 目錄
+   - 實作 `AnalogDiscovery2` 控制類別
+   - 支援: 電源供應、類比輸入/輸出、DC 電壓量測
+
+2. **建立雙儀器記錄器 (AD2 版本)**
+   - `PAPAPIN_dsox4034a-ad2_vrms-temp.py`
+   - AD2 提供 5V 激勵電壓和 DC 電壓量測
+   - DSOX4034A 提供 Vrms 量測
+   - NTC 溫度計算 (R25=7K, B=3600K)
+
+3. **專案檔案重新命名**
+   - 採用新命名規則: `<Project>_<instruments>_<measurements>.py`
+   - 例如: `PAPAPIN_dsox4034a-a34405a_vrms-temp.py`
+
+4. **建立開發指南文件**
+   - 建立 `docs/project/development-guide.md`
+   - 記錄 Python 檔案命名規則
+   - 記錄 BaseDataLogger 模板使用規則
+   - 記錄儀器模組設計規則
+   - 記錄時間記錄標準 (Timestamp + Elapsed Time)
+
+5. **更新 CLAUDE.md**
+   - 更新專案結構
+   - 新增關鍵開發規範摘要
+   - 參照完整開發指南
+
+**檔案命名規範 / File Naming Convention**:
+
+```
+<Project>_<instruments>_<measurements>.py
+
+Examples:
+- PAPAPIN_dsox4034a_vrms.py
+- PAPAPIN_dsox4034a-ad2_vrms-temp.py
+- GENERAL_all_find-instruments.py
+```
+
+**BaseDataLogger 規範 / BaseDataLogger Rules**:
+
+所有資料記錄器必須:
+- 繼承自 `BaseDataLogger`
+- 使用精確計時補償 (非單純 `time.sleep()`)
+- 包含 Timestamp 和 Elapsed Time (ms) 欄位
+- 實作 4 個必要方法
+
+**新增檔案 / New Files**:
+- `instruments/digilent/__init__.py`
+- `instruments/digilent/analog_discovery2.py`
+- `PAPAPIN_dsox4034a-ad2_vrms-temp.py`
+- `docs/project/development-guide.md`
+
+---
+
 ## 2025-11-17
 
 ### 15:56 - 專案建立 / Project Initialization

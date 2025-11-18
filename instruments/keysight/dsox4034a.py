@@ -30,7 +30,11 @@ class DSOX4034A:
         timeout (int): Command timeout in milliseconds
 
     Example:
-        >>> # Connect via USB
+        >>> # Connect using default resource string
+        >>> scope = DSOX4034A()
+        >>> scope.connect()
+        >>>
+        >>> # Or connect via USB
         >>> scope = DSOX4034A("USB0::0x0957::0x17A6::MY########::INSTR")
         >>>
         >>> # Or connect via Ethernet
@@ -48,20 +52,24 @@ class DSOX4034A:
         >>> scope.disconnect()
     """
 
+    # Default VISA resource string for lab instrument
+    DEFAULT_RESOURCE = "TCPIP::192.168.2.60::INSTR"
+
     # Channel mapping
     CHANNELS = {1: "CHAN1", 2: "CHAN2", 3: "CHAN3", 4: "CHAN4"}
 
-    def __init__(self, resource_string: str, timeout: int = 5000):
+    def __init__(self, resource_string: Optional[str] = None, timeout: int = 5000):
         """
         Initialize the DSOX4034A oscilloscope interface.
 
         Args:
-            resource_string: VISA resource string
+            resource_string: VISA resource string (default: DEFAULT_RESOURCE)
                 USB format: "USB0::0x0957::0x17A6::MY########::INSTR"
                 TCPIP format: "TCPIP0::192.168.1.100::INSTR"
+                If None, uses the lab's default instrument
             timeout: Command timeout in milliseconds (default: 5000)
         """
-        self.resource_string = resource_string
+        self.resource_string = resource_string or self.DEFAULT_RESOURCE
         self.timeout = timeout
         self.instrument = None
         self._rm = None
@@ -449,6 +457,47 @@ class DSOX4034A:
             Trigger slope
         """
         return self.query(":TRIG:EDGE:SLOP?")
+
+    def set_trigger_sweep(self, sweep: str) -> None:
+        """
+        Set the trigger sweep mode.
+
+        Args:
+            sweep: Sweep mode ('AUTO' or 'NORM')
+                   AUTO: Auto-triggers if no event occurs within timeout
+                   NORM: Waits for a valid trigger event before acquiring
+        """
+        sweep = sweep.upper()
+        if sweep not in ['AUTO', 'NORM']:
+            raise ValueError("Sweep must be 'AUTO' or 'NORM'")
+        self.write(f":TRIG:SWE {sweep}")
+
+    def get_trigger_sweep(self) -> str:
+        """
+        Get the trigger sweep mode.
+
+        Returns:
+            Trigger sweep mode ('AUTO' or 'NORM')
+        """
+        return self.query(":TRIG:SWE?")
+
+    def set_trigger_holdoff(self, holdoff: float) -> None:
+        """
+        Set the trigger holdoff time.
+
+        Args:
+            holdoff: Holdoff time in seconds (e.g., 0.02 for 20ms)
+        """
+        self.write(f":TRIG:HOLD {holdoff}")
+
+    def get_trigger_holdoff(self) -> float:
+        """
+        Get the trigger holdoff time.
+
+        Returns:
+            Holdoff time in seconds
+        """
+        return float(self.query(":TRIG:HOLD?"))
 
     # ========== Waveform Acquisition ==========
 

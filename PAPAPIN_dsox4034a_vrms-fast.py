@@ -14,7 +14,7 @@ Features:
 - Precise 100ms timing
 
 Usage:
-    python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms]
+    python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms] [holdoff_ms]
 
 Arguments:
     RESOURCE_STRING: VISA resource string for the oscilloscope (required)
@@ -22,16 +22,18 @@ Arguments:
     timebase_ms: Oscilloscope timebase in milliseconds/div (default: 10)
                  Shorter timebase = faster measurements
                  Recommended: 5-20 ms/div for AC signals
+    holdoff_ms: Trigger holdoff time in milliseconds (default: 20)
+                Time to wait after trigger before next trigger
 
 Example:
-    # Use default settings (10 ms/div timebase)
+    # Use default settings (10 ms/div timebase, 20ms holdoff)
     python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR"
 
     # Custom save interval and 5 ms/div timebase for fastest measurements
     python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 100 5
 
-    # 20 ms/div timebase for more stable measurements
-    python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 50 20
+    # 20 ms/div timebase with 10ms holdoff
+    python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 50 20 10
 """
 
 import sys
@@ -50,7 +52,8 @@ class FastVrmsLogger:
     """Fast real-time Vrms data logger using scope's built-in measurements."""
 
     def __init__(self, resource_string: str, results_dir: str = "results",
-                 save_interval: int = 50, timebase_scale: float = 0.01):
+                 save_interval: int = 50, timebase_scale: float = 0.01,
+                 holdoff_time: float = 0.02):
         """
         Initialize the fast Vrms logger.
 
@@ -61,11 +64,13 @@ class FastVrmsLogger:
             timebase_scale: Oscilloscope timebase in seconds/div (default: 0.01 = 10ms/div)
                            Shorter timebase = faster measurements
                            Recommended: 0.005 (5ms/div) to 0.02 (20ms/div) for AC signals
+            holdoff_time: Trigger holdoff time in seconds (default: 0.02 = 20ms)
         """
         self.resource_string = resource_string
         self.results_dir = Path(results_dir)
         self.save_interval = save_interval
         self.timebase_scale = timebase_scale
+        self.holdoff_time = holdoff_time
         self.scope = None
         self.workbook = None
         self.worksheet = None
@@ -77,7 +82,7 @@ class FastVrmsLogger:
         self.start_time = None
         self.last_copy_time = None
         self.measurement_count = 0
-        self.data_buffer: List[Tuple[str, float]] = []
+        self.data_buffer: List[Tuple[str, float, float]] = []
 
         self.results_dir.mkdir(exist_ok=True)
 
@@ -99,6 +104,17 @@ class FastVrmsLogger:
 
         # Set oscilloscope to RUN mode for continuous acquisition
         self.scope.run()
+
+        # CRITICAL: Set trigger to AUTO sweep mode
+        # This ensures the scope auto-triggers even when signal is small
+        # Without this, small signals may not trigger and cause slow measurements
+        print("Configuring trigger for consistent measurement speed...")
+        self.scope.set_trigger_sweep("AUTO")
+        self.scope.set_trigger_level(0.0, 1)  # Set trigger level to 0V
+        self.scope.set_trigger_holdoff(self.holdoff_time)
+        print(f"  Trigger sweep: AUTO")
+        print(f"  Trigger level: 0.0 V")
+        print(f"  Trigger holdoff: {self.holdoff_time*1000:.1f} ms")
 
         # IMPORTANT: Set up measurement on the scope itself
         # This makes the scope continuously calculate VRMS and we just read the result
@@ -148,9 +164,10 @@ class FastVrmsLogger:
         self.worksheet = self.workbook.active
         self.worksheet.title = "Vrms Data"
 
-        self.worksheet.append(["Timestamp", "Vrms (V)"])
+        self.worksheet.append(["Timestamp", "Vrms (V)", "Elapsed Time (ms)"])
         self.worksheet.column_dimensions['A'].width = 20
         self.worksheet.column_dimensions['B'].width = 15
+        self.worksheet.column_dimensions['C'].width = 20
 
         self.workbook.save(self.main_file_path)
         self.copy_to_final()
@@ -178,10 +195,10 @@ class FastVrmsLogger:
             print(f"Error reading Vrms: {e}")
             return None
 
-    def buffer_data(self, timestamp_str: str, vrms: float) -> None:
+    def buffer_data(self, timestamp_str: str, vrms: float, elapsed_ms: float) -> None:
         """Add data to buffer and flush when full."""
         with self.data_lock:
-            self.data_buffer.append((timestamp_str, vrms))
+            self.data_buffer.append((timestamp_str, vrms, elapsed_ms))
             self.measurement_count += 1
 
             if len(self.data_buffer) >= self.save_interval:
@@ -193,9 +210,10 @@ class FastVrmsLogger:
             return
 
         try:
-            for timestamp_str, vrms in self.data_buffer:
+            for timestamp_str, vrms, elapsed_ms in self.data_buffer:
                 self.worksheet.cell(row=self.row_index, column=1, value=timestamp_str)
                 self.worksheet.cell(row=self.row_index, column=2, value=vrms)
+                self.worksheet.cell(row=self.row_index, column=3, value=elapsed_ms)
                 self.row_index += 1
 
             self.workbook.save(self.main_file_path)
@@ -244,12 +262,15 @@ class FastVrmsLogger:
                 now = datetime.now()
                 timestamp_str = now.strftime("%H:%M:%S") + f":{now.microsecond // 1000:03d}"
 
+                # Calculate elapsed time in milliseconds from start
+                elapsed_ms = (now - self.start_time).total_seconds() * 1000
+
                 # Read the continuously-updated VRMS (should be fast!)
                 vrms = self.read_vrms_fast()
 
                 if vrms is not None:
-                    self.buffer_data(timestamp_str, vrms)
-                    print(f"{timestamp_str} | {vrms:.6f} V")
+                    self.buffer_data(timestamp_str, vrms, elapsed_ms)
+                    print(f"{timestamp_str} | {vrms:.6f} V | {elapsed_ms:.1f} ms")
 
                 # Check if 5 minutes have passed
                 if time.time() - self.last_copy_time >= 300:
@@ -303,15 +324,17 @@ def main():
     if len(sys.argv) < 2:
         print("Error: VISA resource string required")
         print("\nUsage:")
-        print("  python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms]")
+        print("  python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms] [holdoff_ms]")
         print("\nArguments:")
         print("  RESOURCE_STRING: VISA resource string (required)")
         print("  save_interval: Number of measurements before saving (default: 50)")
         print("  timebase_ms: Timebase in ms/div (default: 10)")
         print("               Shorter = faster, Recommended: 5-20 ms/div")
+        print("  holdoff_ms: Trigger holdoff in ms (default: 20)")
         print("\nExamples:")
         print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR"')
         print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 100 5')
+        print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 50 20 10')
         sys.exit(1)
 
     resource_string = sys.argv[1]
@@ -334,10 +357,20 @@ def main():
         except ValueError:
             print(f"Warning: Invalid timebase_ms '{sys.argv[3]}', using default: 10 ms/div")
 
+    # Parse holdoff_ms (argument 4)
+    holdoff_time = 0.02  # Default: 20 ms = 0.02 s
+    if len(sys.argv) >= 5:
+        try:
+            holdoff_ms = float(sys.argv[4])
+            holdoff_time = holdoff_ms / 1000.0  # Convert ms to seconds
+            print(f"Using holdoff: {holdoff_ms} ms ({holdoff_time} s)")
+        except ValueError:
+            print(f"Warning: Invalid holdoff_ms '{sys.argv[4]}', using default: 20 ms")
+
     signal.signal(signal.SIGINT, signal_handler)
 
     logger = FastVrmsLogger(resource_string, save_interval=save_interval,
-                           timebase_scale=timebase_scale)
+                           timebase_scale=timebase_scale, holdoff_time=holdoff_time)
 
     try:
         logger.connect()
