@@ -182,6 +182,25 @@ Currently establishing project infrastructure and first instrument control modul
 
 ## 更新日誌 / Update Log
 
+### 2025-11-19
+- 新增 "Elapsed Time (hr)" 欄位到所有資料記錄器
+- 更新 BaseDataLogger 自動計算 elapsed_hr
+- 更新 GENERAL_all_plot-results.py 使用小時為 X 軸
+- 更新所有 PAPABIN 專案檔案描述和預設參數
+- 預設參數: resource=TCPIP::192.168.2.60::INSTR, save_interval=10, timebase=5ms, holdoff=5ms
+- 修正專案名稱 PAPAPIN → PAPABIN
+- 更新開發指南加入 Elapsed Time (hr) 規則
+
+---
+
+- Added "Elapsed Time (hr)" column to all data loggers
+- Updated BaseDataLogger to auto-calculate elapsed_hr
+- Updated GENERAL_all_plot-results.py to use hours for X-axis
+- Updated all PAPABIN project file descriptions and default parameters
+- Default params: resource=TCPIP::192.168.2.60::INSTR, save_interval=10, timebase=5ms, holdoff=5ms
+- Fixed project name PAPAPIN → PAPABIN
+- Updated development guide with Elapsed Time (hr) requirement
+
 ### 2025-11-18
 - 新增 Agilent 34405A 數位萬用表控制模組
 - 新增 vrms_logger_fast.py 經過時間欄位 (Elapsed Time)

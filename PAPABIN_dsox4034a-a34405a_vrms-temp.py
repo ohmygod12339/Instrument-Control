@@ -1,11 +1,12 @@
 """
 Dual Instrument Logger - A34405A DC Voltage + DSOX4034A Vrms
 
-This example reads from both instruments simultaneously:
+This script reads from both instruments simultaneously:
 - Agilent 34405A: DC Voltage (auto-range) from NTC voltage divider
 - Keysight DSOX4034A: Channel 1 Vrms
 
 Also calculates NTC temperature using Beta equation (R25=7K, B=3600K).
+Records Elapsed Time in ms and hr for plotting with GENERAL_all_plot-results.py.
 
 NTC Circuit:
     5V ---- [NTC] ---- [6.8k Ref] ---- GND
@@ -18,8 +19,12 @@ Settings:
 - Trigger holdoff: 5ms
 - Save interval: 20 measurements
 
+Default Resources:
+- DMM: USB0::2391::1560::TW47310002::0::INSTR
+- Scope: TCPIP::192.168.2.60::INSTR
+
 Usage:
-    python examples/dual_instrument_logger.py
+    python PAPABIN_dsox4034a-a34405a_vrms-temp.py
 
 Press Ctrl+C to stop logging.
 """
@@ -251,12 +256,13 @@ class DualInstrumentLogger(BaseDataLogger):
 
     def get_headers(self):
         """Return Excel column headers."""
-        return ["Timestamp", "DC Voltage (V)", "Vrms CH1 (V)", "Temperature (C)", "Elapsed Time (ms)"]
+        return ["Timestamp", "DC Voltage (V)", "Vrms CH1 (V)", "Temperature (C)", "Elapsed Time (ms)", "Elapsed Time (hr)"]
 
     def format_measurement(self, timestamp_str, elapsed_ms, measurement):
         """Format measurement tuple into Excel row."""
         dc_voltage, vrms, temperature = measurement
-        return [timestamp_str, dc_voltage, vrms, temperature, elapsed_ms]
+        elapsed_hr = elapsed_ms / 3_600_000  # Convert ms to hours
+        return [timestamp_str, dc_voltage, vrms, temperature, elapsed_ms, elapsed_hr]
 
     def format_display(self, timestamp_str, elapsed_ms, measurement):
         """Format measurements for console display."""

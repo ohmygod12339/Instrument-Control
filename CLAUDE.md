@@ -35,7 +35,7 @@ User Python Script
 
 ```
 ./
-├── PAPAPIN_*_*.py           # Main project scripts (see naming convention below)
+├── PAPABIN_*_*.py           # Main project scripts (see naming convention below)
 ├── GENERAL_*_*.py           # General utility scripts
 │
 ├── instruments/              # Individual instrument modules
@@ -81,8 +81,8 @@ User Python Script
 Main scripts follow: `<Project>_<instruments>_<measurements>.py`
 
 Examples:
-- `PAPAPIN_dsox4034a_vrms.py` - Oscilloscope Vrms measurement
-- `PAPAPIN_dsox4034a-ad2_vrms-temp.py` - Oscilloscope + AD2, Vrms + temperature
+- `PAPABIN_dsox4034a_vrms.py` - Oscilloscope Vrms measurement
+- `PAPABIN_dsox4034a-ad2_vrms-temp.py` - Oscilloscope + AD2, Vrms + temperature
 - `GENERAL_all_find-instruments.py` - Utility script
 
 ### BaseDataLogger Template

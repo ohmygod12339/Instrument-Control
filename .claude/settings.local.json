@@ -8,7 +8,13 @@
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(mkdir:*)",
       "Bash(python:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd instrument modules, BaseDataLogger template, and standardize naming\n\nMajor additions:\n- Add Agilent 34405A DMM control module\n- Add Digilent Analog Discovery 2 control module\n- Add BaseDataLogger template for consistent data logging\n- Add development guide documentation\n\nFeatures:\n- Elapsed time tracking (ms from test start)\n- Precise timing compensation (not just time.sleep)\n- Buffered Excel output with dual-file system\n- Trigger sweep mode (AUTO/NORM) and holdoff settings\n- Default resource strings for lab instruments\n- NTC temperature calculation (Beta equation)\n\nStandardization:\n- File naming: <Project>_<instruments>_<measurements>.py\n- All loggers must inherit from BaseDataLogger\n- Standard columns: Timestamp, measurements, Elapsed Time (ms)\n\nFiles renamed to follow naming convention:\n- vrms_logger.py -> PAPAPIN_dsox4034a_vrms.py\n- vrms_logger_fast.py -> PAPAPIN_dsox4034a_vrms-fast.py\n- find_instruments.py -> GENERAL_all_find-instruments.py\n- read_scope_settings.py -> GENERAL_dsox4034a_read-scope-settings.py\n\nNew project scripts:\n- PAPAPIN_dsox4034a-a34405a_vrms-temp.py\n- PAPAPIN_dsox4034a-ad2_vrms-temp.py\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git -C \"D:\\Projects\\實驗室\\Instrument-Control\" status)",
+      "Bash(git -C \"D:\\Projects\\實驗室\\Instrument-Control\" diff)",
+      "Bash(git -C \"D:\\Projects\\實驗室\\Instrument-Control\" log --oneline -5)",
+      "Bash(git -C \"D:\\Projects\\實驗室\\Instrument-Control\" add -A)"
     ],
     "deny": [],
     "ask": []

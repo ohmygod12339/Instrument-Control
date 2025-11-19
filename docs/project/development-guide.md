@@ -25,10 +25,10 @@ All main script files in the root directory follow this naming pattern:
 
 | Filename | Description |
 |----------|-------------|
-| `PAPAPIN_dsox4034a_vrms.py` | PAPAPIN project, oscilloscope, Vrms measurement |
-| `PAPAPIN_dsox4034a_vrms-fast.py` | PAPAPIN project, oscilloscope, fast Vrms measurement |
-| `PAPAPIN_dsox4034a-a34405a_vrms-temp.py` | PAPAPIN project, oscilloscope + DMM, Vrms + temperature |
-| `PAPAPIN_dsox4034a-ad2_vrms-temp.py` | PAPAPIN project, oscilloscope + AD2, Vrms + temperature |
+| `PAPABIN_dsox4034a_vrms.py` | PAPABIN project, oscilloscope, Vrms measurement |
+| `PAPABIN_dsox4034a_vrms-fast.py` | PAPABIN project, oscilloscope, fast Vrms measurement |
+| `PAPABIN_dsox4034a-a34405a_vrms-temp.py` | PAPABIN project, oscilloscope + DMM, Vrms + temperature |
+| `PAPABIN_dsox4034a-ad2_vrms-temp.py` | PAPABIN project, oscilloscope + AD2, Vrms + temperature |
 | `GENERAL_all_find-instruments.py` | General utility to find all instruments |
 | `GENERAL_dsox4034a_read-scope-settings.py` | General utility to read oscilloscope settings |
 
@@ -88,7 +88,7 @@ class MyLogger(BaseDataLogger):
 
     def get_headers(self):
         """Return Excel column headers."""
-        return ["Timestamp", "Value", "Elapsed Time (ms)"]
+        return ["Timestamp", "Value", "Elapsed Time (ms)", "Elapsed Time (hr)"]
 ```
 
 ### Optional Methods to Override
@@ -139,7 +139,7 @@ class MyLogger(BaseDataLogger):
             self.instrument.disconnect()
 
     def get_headers(self):
-        return ["Timestamp", "Value", "Elapsed Time (ms)"]
+        return ["Timestamp", "Value", "Elapsed Time (ms)", "Elapsed Time (hr)"]
 
 # Run the logger
 logger = MyLogger()
@@ -158,6 +158,14 @@ logger.start()  # Handles everything automatically
 |--------|--------|-------------|
 | Timestamp | `HH:MM:SS:mmm` | Absolute time of measurement |
 | Elapsed Time (ms) | Float | Milliseconds since test start |
+| Elapsed Time (hr) | Float | Hours since test start (for plotting) |
+
+**Elapsed Time (hr) Calculation:**
+```python
+elapsed_hr = elapsed_ms / 3_600_000  # ms to hours
+```
+
+This column is used by `GENERAL_all_plot-results.py` for plotting with a more readable x-axis scale.
 
 ### Precise Timing Implementation
 
@@ -366,7 +374,7 @@ class MyLogger(BaseDataLogger):
             self.instrument.disconnect()
 
     def get_headers(self):
-        return ["Timestamp", "Vrms (V)", "Elapsed Time (ms)"]
+        return ["Timestamp", "Vrms (V)", "Elapsed Time (ms)", "Elapsed Time (hr)"]
 
 def main():
     signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))

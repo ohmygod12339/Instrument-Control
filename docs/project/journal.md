@@ -6,6 +6,75 @@ This document records important events, decisions, problem-solving, and commit h
 
 ---
 
+## 2025-11-19
+
+### Session - Elapsed Time (hr) 欄位新增與專案標準化
+
+**工作內容 / Work Done**:
+
+1. **新增 Elapsed Time (hr) 欄位**
+   - 更新 `development-guide.md` 加入新規則
+   - 更新 `instruments/base_logger.py` 自動計算 `elapsed_hr = elapsed_ms / 3_600_000`
+   - 更新所有 PAPABIN 專案檔案支援此欄位
+   - 用於 `GENERAL_all_plot-results.py` 繪圖時的 X 軸
+
+2. **更新 GENERAL_all_plot-results.py**
+   - X 軸改用 Elapsed Time (hr)
+   - Y 軸排除 Elapsed Time (ms) 和 Elapsed Time (hr)
+   - 修正 `print_file_info()` 顯示格式
+
+3. **更新 PAPABIN 專案檔案**
+   - `PAPABIN_dsox4034a_vrms-fast.py`:
+     - 更新文檔描述和使用範例
+     - 設定預設參數: resource=TCPIP::192.168.2.60::INSTR, save_interval=10, timebase=5ms, holdoff=5ms
+     - 所有參數改為可選
+   - `PAPABIN_dsox4034a-a34405a_vrms-temp.py`:
+     - 更新文檔描述和正確檔案名稱
+   - `PAPABIN_dsox4034a-ad2_vrms-temp.py`:
+     - 更新文檔描述和正確檔案名稱
+
+4. **修正專案名稱**
+   - PAPAPIN → PAPABIN (在所有文件中)
+   - 更新 CLAUDE.md, development-guide.md, journal.md
+
+**技術決策 / Technical Decisions**:
+
+1. **選擇小時作為繪圖 X 軸單位**
+   - **原因**: 長時間測試 (數小時) 使用毫秒數值過大
+   - **計算**: `elapsed_hr = elapsed_ms / 3_600_000`
+   - **效果**: 更易讀的 X 軸刻度
+
+2. **預設參數設定**
+   - resource: TCPIP::192.168.2.60::INSTR (實驗室示波器 IP)
+   - save_interval: 10 (更頻繁儲存)
+   - timebase: 5 ms/div (快速量測)
+   - holdoff: 5 ms (最小延遲)
+
+**程式碼變更 / Code Changes**:
+
+1. `instruments/base_logger.py`:
+   - `format_measurement()` 方法新增 elapsed_hr 計算
+
+2. `GENERAL_all_plot-results.py`:
+   - `get_measurement_columns()` 排除兩個 elapsed time 欄位
+   - 繪圖函數改用 Elapsed Time (hr)
+
+3. `docs/project/development-guide.md`:
+   - 標準輸出欄位表格新增 Elapsed Time (hr)
+   - 所有範例 `get_headers()` 更新
+
+4. PAPABIN 專案檔案:
+   - 更新 docstrings 和預設值
+   - 新增 elapsed_hr 到 Excel 輸出
+
+**Excel 輸出格式 / Excel Output Format**:
+
+| Timestamp | Measurement | Elapsed Time (ms) | Elapsed Time (hr) |
+|-----------|-------------|-------------------|-------------------|
+| HH:MM:SS:mmm | Value | 12345.678 | 0.003429 |
+
+---
+
 ## 2025-11-18
 
 ### Session - Agilent 34405A 模組新增與 Vrms Logger 改進
@@ -117,14 +186,14 @@ dmm.disconnect()
    - 支援: 電源供應、類比輸入/輸出、DC 電壓量測
 
 2. **建立雙儀器記錄器 (AD2 版本)**
-   - `PAPAPIN_dsox4034a-ad2_vrms-temp.py`
+   - `PAPABIN_dsox4034a-ad2_vrms-temp.py`
    - AD2 提供 5V 激勵電壓和 DC 電壓量測
    - DSOX4034A 提供 Vrms 量測
    - NTC 溫度計算 (R25=7K, B=3600K)
 
 3. **專案檔案重新命名**
    - 採用新命名規則: `<Project>_<instruments>_<measurements>.py`
-   - 例如: `PAPAPIN_dsox4034a-a34405a_vrms-temp.py`
+   - 例如: `PAPABIN_dsox4034a-a34405a_vrms-temp.py`
 
 4. **建立開發指南文件**
    - 建立 `docs/project/development-guide.md`
@@ -144,8 +213,8 @@ dmm.disconnect()
 <Project>_<instruments>_<measurements>.py
 
 Examples:
-- PAPAPIN_dsox4034a_vrms.py
-- PAPAPIN_dsox4034a-ad2_vrms-temp.py
+- PAPABIN_dsox4034a_vrms.py
+- PAPABIN_dsox4034a-ad2_vrms-temp.py
 - GENERAL_all_find-instruments.py
 ```
 
@@ -160,7 +229,7 @@ Examples:
 **新增檔案 / New Files**:
 - `instruments/digilent/__init__.py`
 - `instruments/digilent/analog_discovery2.py`
-- `PAPAPIN_dsox4034a-ad2_vrms-temp.py`
+- `PAPABIN_dsox4034a-ad2_vrms-temp.py`
 - `docs/project/development-guide.md`
 
 ---

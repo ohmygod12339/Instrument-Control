@@ -23,7 +23,7 @@ Example:
             self.instrument.disconnect()
 
         def get_headers(self):
-            return ["Timestamp", "Value", "Elapsed Time (ms)"]
+            return ["Timestamp", "Value", "Elapsed Time (ms)", "Elapsed Time (hr)"]
 """
 
 import sys
@@ -116,7 +116,7 @@ class BaseDataLogger(ABC):
         Return the column headers for the Excel file.
 
         Returns:
-            List of header strings, e.g., ["Timestamp", "Value", "Elapsed Time (ms)"]
+            List of header strings, e.g., ["Timestamp", "Value", "Elapsed Time (ms)", "Elapsed Time (hr)"]
         """
         pass
 
@@ -136,10 +136,11 @@ class BaseDataLogger(ABC):
         Returns:
             List of values for the Excel row
         """
+        elapsed_hr = elapsed_ms / 3_600_000  # Convert ms to hours
         if isinstance(measurement, (list, tuple)):
-            return [timestamp_str, *measurement, elapsed_ms]
+            return [timestamp_str, *measurement, elapsed_ms, elapsed_hr]
         else:
-            return [timestamp_str, measurement, elapsed_ms]
+            return [timestamp_str, measurement, elapsed_ms, elapsed_hr]
 
     def format_display(self, timestamp_str: str, elapsed_ms: float,
                       measurement: Any) -> str:

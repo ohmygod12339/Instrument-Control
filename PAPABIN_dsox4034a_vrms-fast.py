@@ -12,28 +12,32 @@ Features:
 - Configurable timebase for optimal measurement speed
 - Buffered writes for performance
 - Precise 100ms timing
+- Records Elapsed Time in ms and hr for plotting
 
 Usage:
-    python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms] [holdoff_ms]
+    python PAPABIN_dsox4034a_vrms-fast.py [RESOURCE_STRING] [save_interval] [timebase_ms] [holdoff_ms]
 
 Arguments:
-    RESOURCE_STRING: VISA resource string for the oscilloscope (required)
-    save_interval: Number of measurements before saving to disk (default: 50)
-    timebase_ms: Oscilloscope timebase in milliseconds/div (default: 10)
+    RESOURCE_STRING: VISA resource string (default: TCPIP::192.168.2.60::INSTR)
+    save_interval: Number of measurements before saving to disk (default: 10)
+    timebase_ms: Oscilloscope timebase in milliseconds/div (default: 5)
                  Shorter timebase = faster measurements
                  Recommended: 5-20 ms/div for AC signals
-    holdoff_ms: Trigger holdoff time in milliseconds (default: 20)
+    holdoff_ms: Trigger holdoff time in milliseconds (default: 5)
                 Time to wait after trigger before next trigger
 
 Example:
-    # Use default settings (10 ms/div timebase, 20ms holdoff)
-    python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR"
+    # Use all defaults (TCPIP::192.168.2.60::INSTR, 10, 5ms/div, 5ms holdoff)
+    python PAPABIN_dsox4034a_vrms-fast.py
 
-    # Custom save interval and 5 ms/div timebase for fastest measurements
-    python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 100 5
+    # Custom resource string
+    python PAPABIN_dsox4034a_vrms-fast.py "TCPIP::192.168.2.60::INSTR"
 
-    # 20 ms/div timebase with 10ms holdoff
-    python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 50 20 10
+    # Custom save interval
+    python PAPABIN_dsox4034a_vrms-fast.py "TCPIP::192.168.2.60::INSTR" 50
+
+    # All custom parameters
+    python PAPABIN_dsox4034a_vrms-fast.py "TCPIP::192.168.2.60::INSTR" 10 5 5
 """
 
 import sys
@@ -82,7 +86,7 @@ class FastVrmsLogger:
         self.start_time = None
         self.last_copy_time = None
         self.measurement_count = 0
-        self.data_buffer: List[Tuple[str, float, float]] = []
+        self.data_buffer: List[Tuple[str, float, float, float]] = []
 
         self.results_dir.mkdir(exist_ok=True)
 
@@ -164,10 +168,11 @@ class FastVrmsLogger:
         self.worksheet = self.workbook.active
         self.worksheet.title = "Vrms Data"
 
-        self.worksheet.append(["Timestamp", "Vrms (V)", "Elapsed Time (ms)"])
+        self.worksheet.append(["Timestamp", "Vrms (V)", "Elapsed Time (ms)", "Elapsed Time (hr)"])
         self.worksheet.column_dimensions['A'].width = 20
         self.worksheet.column_dimensions['B'].width = 15
         self.worksheet.column_dimensions['C'].width = 20
+        self.worksheet.column_dimensions['D'].width = 20
 
         self.workbook.save(self.main_file_path)
         self.copy_to_final()
@@ -198,7 +203,8 @@ class FastVrmsLogger:
     def buffer_data(self, timestamp_str: str, vrms: float, elapsed_ms: float) -> None:
         """Add data to buffer and flush when full."""
         with self.data_lock:
-            self.data_buffer.append((timestamp_str, vrms, elapsed_ms))
+            elapsed_hr = elapsed_ms / 3_600_000  # Convert ms to hours
+            self.data_buffer.append((timestamp_str, vrms, elapsed_ms, elapsed_hr))
             self.measurement_count += 1
 
             if len(self.data_buffer) >= self.save_interval:
@@ -210,10 +216,11 @@ class FastVrmsLogger:
             return
 
         try:
-            for timestamp_str, vrms, elapsed_ms in self.data_buffer:
+            for timestamp_str, vrms, elapsed_ms, elapsed_hr in self.data_buffer:
                 self.worksheet.cell(row=self.row_index, column=1, value=timestamp_str)
                 self.worksheet.cell(row=self.row_index, column=2, value=vrms)
                 self.worksheet.cell(row=self.row_index, column=3, value=elapsed_ms)
+                self.worksheet.cell(row=self.row_index, column=4, value=elapsed_hr)
                 self.row_index += 1
 
             self.workbook.save(self.main_file_path)
@@ -321,51 +328,65 @@ def signal_handler(signum, frame):
 
 def main():
     """Main entry point."""
-    if len(sys.argv) < 2:
-        print("Error: VISA resource string required")
-        print("\nUsage:")
-        print("  python vrms_logger_fast.py <RESOURCE_STRING> [save_interval] [timebase_ms] [holdoff_ms]")
-        print("\nArguments:")
-        print("  RESOURCE_STRING: VISA resource string (required)")
-        print("  save_interval: Number of measurements before saving (default: 50)")
-        print("  timebase_ms: Timebase in ms/div (default: 10)")
-        print("               Shorter = faster, Recommended: 5-20 ms/div")
-        print("  holdoff_ms: Trigger holdoff in ms (default: 20)")
-        print("\nExamples:")
-        print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR"')
-        print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 100 5')
-        print('  python vrms_logger_fast.py "TCPIP::192.168.2.60::INSTR" 50 20 10')
-        sys.exit(1)
+    # Default values
+    default_resource = "TCPIP::192.168.2.60::INSTR"
+    default_save_interval = 10
+    default_timebase_ms = 5
+    default_holdoff_ms = 5
 
-    resource_string = sys.argv[1]
+    # Show help if requested
+    if len(sys.argv) >= 2 and sys.argv[1] in ['-h', '--help']:
+        print("Usage:")
+        print("  python PAPABIN_dsox4034a_vrms-fast.py [RESOURCE_STRING] [save_interval] [timebase_ms] [holdoff_ms]")
+        print("\nArguments:")
+        print(f"  RESOURCE_STRING: VISA resource string (default: {default_resource})")
+        print(f"  save_interval: Number of measurements before saving (default: {default_save_interval})")
+        print(f"  timebase_ms: Timebase in ms/div (default: {default_timebase_ms})")
+        print("               Shorter = faster, Recommended: 5-20 ms/div")
+        print(f"  holdoff_ms: Trigger holdoff in ms (default: {default_holdoff_ms})")
+        print("\nExamples:")
+        print('  python PAPABIN_dsox4034a_vrms-fast.py')
+        print('  python PAPABIN_dsox4034a_vrms-fast.py "TCPIP::192.168.2.60::INSTR"')
+        print('  python PAPABIN_dsox4034a_vrms-fast.py "TCPIP::192.168.2.60::INSTR" 10 5 5')
+        sys.exit(0)
+
+    # Parse resource_string (argument 1)
+    resource_string = default_resource
+    if len(sys.argv) >= 2:
+        resource_string = sys.argv[1]
 
     # Parse save_interval (argument 2)
-    save_interval = 50
+    save_interval = default_save_interval
     if len(sys.argv) >= 3:
         try:
             save_interval = int(sys.argv[2])
         except ValueError:
-            print(f"Warning: Invalid save_interval '{sys.argv[2]}', using default: 50")
+            print(f"Warning: Invalid save_interval '{sys.argv[2]}', using default: {default_save_interval}")
 
     # Parse timebase_ms (argument 3)
-    timebase_scale = 0.01  # Default: 10 ms/div = 0.01 s/div
+    timebase_scale = default_timebase_ms / 1000.0  # Convert ms to seconds
     if len(sys.argv) >= 4:
         try:
             timebase_ms = float(sys.argv[3])
             timebase_scale = timebase_ms / 1000.0  # Convert ms to seconds
-            print(f"Using timebase: {timebase_ms} ms/div ({timebase_scale} s/div)")
         except ValueError:
-            print(f"Warning: Invalid timebase_ms '{sys.argv[3]}', using default: 10 ms/div")
+            print(f"Warning: Invalid timebase_ms '{sys.argv[3]}', using default: {default_timebase_ms} ms/div")
 
     # Parse holdoff_ms (argument 4)
-    holdoff_time = 0.02  # Default: 20 ms = 0.02 s
+    holdoff_time = default_holdoff_ms / 1000.0  # Convert ms to seconds
     if len(sys.argv) >= 5:
         try:
             holdoff_ms = float(sys.argv[4])
             holdoff_time = holdoff_ms / 1000.0  # Convert ms to seconds
-            print(f"Using holdoff: {holdoff_ms} ms ({holdoff_time} s)")
         except ValueError:
-            print(f"Warning: Invalid holdoff_ms '{sys.argv[4]}', using default: 20 ms")
+            print(f"Warning: Invalid holdoff_ms '{sys.argv[4]}', using default: {default_holdoff_ms} ms")
+
+    # Print configuration
+    print(f"Configuration:")
+    print(f"  Resource: {resource_string}")
+    print(f"  Save interval: {save_interval}")
+    print(f"  Timebase: {timebase_scale*1000:.1f} ms/div")
+    print(f"  Holdoff: {holdoff_time*1000:.1f} ms")
 
     signal.signal(signal.SIGINT, signal_handler)
 
