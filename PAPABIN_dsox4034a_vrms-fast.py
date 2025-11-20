@@ -161,8 +161,8 @@ class FastVrmsLogger:
         self.start_time = datetime.now()
         timestamp = self.start_time.strftime("%Y%m%d_%H%M%S")
 
-        self.main_file_path = self.results_dir / f"Result_{timestamp}_Real-Time-Result.xlsx"
-        self.final_file_path = self.results_dir / f"Result_{timestamp}_Real-Time-Result_FINAL.xlsx"
+        self.main_file_path = self.results_dir / f"Result_{timestamp}.xlsx"
+        self.final_file_path = self.results_dir / f"Result_{timestamp}_FINAL.xlsx"
 
         self.workbook = Workbook()
         self.worksheet = self.workbook.active

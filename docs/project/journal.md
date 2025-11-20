@@ -477,6 +477,63 @@ python vrms_logger.py "USB0::0x0957::0x17A6::MY12345678::INSTR" 100
 
 ---
 
+## 2025-11-20
+
+### Session - 簡化輸出檔案命名 / Simplify Output File Naming
+
+**時間 / Time**: 14:30
+
+**工作內容 / Work Done**:
+
+1. **簡化 Excel 輸出檔案命名**
+   - 舊格式: `Result_{timestamp}_Real-Time-Result.xlsx`
+   - 新格式: `Result_{timestamp}.xlsx`
+   - 舊格式: `Result_{timestamp}_Real-Time-Result_FINAL.xlsx`
+   - 新格式: `Result_{timestamp}_FINAL.xlsx`
+
+2. **更新的檔案**
+   - `instruments/base_logger.py:174-175` - 更新 BaseDataLogger 模板
+   - `PAPABIN_dsox4034a_vrms-fast.py:164-165` - 更新此腳本的檔案設定
+
+3. **影響範圍**
+   - 所有使用 BaseDataLogger 的專案自動套用新命名
+   - `PAPABIN_dsox4034a-a34405a_vrms-temp.py` ✅
+   - `PAPABIN_dsox4034a-ad2_vrms-temp.py` ✅
+   - `PAPABIN_dsox4034a_vrms-fast.py` ✅
+
+**技術決策 / Technical Decisions**:
+
+1. **保留 _FINAL 後綴**
+   - FINAL 檔案仍保留 `_FINAL` 後綴以便識別
+   - 主檔案移除冗長的 `_Real-Time-Result` 描述
+   - 時間戳記格式維持 `YYYYMMDD_HHMMSS`
+
+2. **命名設計原則**
+   - 檔案名稱直接顯示測試開始的真實日期時間
+   - 更簡潔，更易讀
+   - 減少檔案名稱長度，避免路徑過長問題
+
+**檔案命名範例 / File Naming Examples**:
+
+```
+舊格式 / Old Format:
+Result_20251120_143052_Real-Time-Result.xlsx
+Result_20251120_143052_Real-Time-Result_FINAL.xlsx
+
+新格式 / New Format:
+Result_20251120_143052.xlsx
+Result_20251120_143052_FINAL.xlsx
+```
+
+**使用者需求 / User Request**:
+- 使用者認為原本的檔案名稱過長
+- 提議使用真實日期時間作為檔案名稱
+- 採納建議，簡化為 `Result_{實際測試開始日期時間}`
+
+**Git 提交 / Git Commit**: `8fe850f` - Simplify output file naming format
+
+---
+
 ## Git 提交歷史 / Git Commit History
 
 (Git commits will be recorded here as they are made)

@@ -182,6 +182,19 @@ Currently establishing project infrastructure and first instrument control modul
 
 ## 更新日誌 / Update Log
 
+### 2025-11-20
+- 簡化輸出檔案命名格式
+- 移除 `_Real-Time-Result` 冗長描述
+- 新格式: `Result_{YYYYMMDD_HHMMSS}.xlsx` 和 `Result_{YYYYMMDD_HHMMSS}_FINAL.xlsx`
+- 更新 BaseDataLogger 和 PAPABIN_dsox4034a_vrms-fast.py
+
+---
+
+- Simplified output file naming format
+- Removed verbose `_Real-Time-Result` description
+- New format: `Result_{YYYYMMDD_HHMMSS}.xlsx` and `Result_{YYYYMMDD_HHMMSS}_FINAL.xlsx`
+- Updated BaseDataLogger and PAPABIN_dsox4034a_vrms-fast.py
+
 ### 2025-11-19
 - 新增 "Elapsed Time (hr)" 欄位到所有資料記錄器
 - 更新 BaseDataLogger 自動計算 elapsed_hr
