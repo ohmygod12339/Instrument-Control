@@ -530,7 +530,7 @@ Result_20251120_143052_FINAL.xlsx
 - 提議使用真實日期時間作為檔案名稱
 - 採納建議，簡化為 `Result_{實際測試開始日期時間}`
 
-**Git 提交 / Git Commit**: `8fe850f` - Simplify output file naming format
+**Git 提交 / Git Commit**: `a773fb3` - Simplify output file naming format
 
 ---
 
