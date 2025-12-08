@@ -796,6 +796,98 @@ print(f"  Vertical scale confirmed: {current_scale*1000:.1f} mV/div")
 
 ---
 
+## 2025-12-08 (Session 3)
+
+### Session - Add Custom Y-Axis Labels to Plotting Script
+
+**時間 / Time**: 深夜
+
+**工作內容 / Work Done**:
+
+1. **新增自訂 Y 軸標籤功能到繪圖腳本**
+   - 新增 `--ylabel-left` / `--yl` 參數: 自訂左側 Y 軸標籤
+   - 新增 `--ylabel-right` / `--yr` 參數: 自訂右側 Y 軸標籤
+   - 僅在使用 `--dual-axis` 時有效
+   - 如果未提供自訂標籤，會自動使用欄位名稱
+
+**使用者需求 / User Request**:
+使用者希望在使用雙 Y 軸 (`--dual-axis`) 時，能夠自訂 Y 軸的標籤文字。
+
+**技術實作 / Technical Implementation**:
+
+1. **函數簽章更新**:
+   ```python
+   def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False,
+                   title: str = None, save_path: str = None,
+                   ylabel_left: str = None, ylabel_right: str = None):
+   ```
+
+2. **左側 Y 軸標籤**:
+   ```python
+   # Use custom label if provided, otherwise use column name
+   left_label = ylabel_left if ylabel_left else col1
+   ax1.set_ylabel(left_label, color=colors[0], fontsize=12)
+   ```
+
+3. **右側 Y 軸標籤**:
+   ```python
+   # For 2 columns
+   right_label = ylabel_right if ylabel_right else plot_columns[1]
+   ax2.set_ylabel(right_label, color=colors[1], fontsize=12)
+
+   # For >2 columns
+   right_label = ylabel_right if ylabel_right else 'Other Measurements'
+   ax2.set_ylabel(right_label, fontsize=12)
+   ```
+
+**命令列參數 / Command-Line Arguments**:
+```bash
+--ylabel-left LABEL, --yl LABEL    # 左側 Y 軸標籤
+--ylabel-right LABEL, --yr LABEL   # 右側 Y 軸標籤
+```
+
+**使用範例 / Usage Examples**:
+
+```bash
+# 雙 Y 軸並自訂標籤
+python GENERAL_all_plot-results.py results/file.xlsx --dual-axis \
+    --ylabel-left "Voltage (V)" --ylabel-right "Temperature (°C)"
+
+# 使用簡短參數
+python GENERAL_all_plot-results.py results/file.xlsx -d \
+    --yl "電壓 (V)" --yr "溫度 (°C)"
+
+# 指定欄位並自訂標籤
+python GENERAL_all_plot-results.py results/file.xlsx --dual-axis \
+    -c "Vrms (V)" "Temp Ch1 (°C)" --yl "Voltage" --yr "Temperature"
+```
+
+**預設行為 / Default Behavior**:
+- 若未提供 `--ylabel-left`: 使用第一個欄位名稱
+- 若未提供 `--ylabel-right`:
+  - 2 欄位時: 使用第二個欄位名稱
+  - >2 欄位時: 使用 "Other Measurements"
+
+**程式碼變更 / Code Changes**:
+- `GENERAL_all_plot-results.py` (lines 100-101): 函數簽章新增參數
+- `GENERAL_all_plot-results.py` (lines 152-153): 左側標籤邏輯
+- `GENERAL_all_plot-results.py` (lines 172-182): 右側標籤邏輯
+- `GENERAL_all_plot-results.py` (lines 357-360): 新增命令列參數
+- `GENERAL_all_plot-results.py` (lines 412-413): 傳遞參數到函數
+
+**文檔更新 / Documentation Updates**:
+- 更新模組 docstring 使用範例
+- 更新 argparse epilog 範例
+- 新增完整使用範例說明
+
+**效益 / Benefits**:
+1. **靈活性**: 可自訂更易讀的軸標籤
+2. **國際化**: 支援任何語言的標籤（中文、英文等）
+3. **簡潔性**: 可簡化長欄位名稱
+4. **向後相容**: 不影響現有使用方式
+
+---
+
 ## Git 提交歷史 / Git Commit History
 
 (Git commits will be recorded here as they are made)

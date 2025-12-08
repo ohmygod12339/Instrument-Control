@@ -20,6 +20,9 @@ Usage:
     # Use dual y-axis (for different scales)
     python GENERAL_all_plot-results.py results/file.xlsx --dual-axis
 
+    # Use dual y-axis with custom labels
+    python GENERAL_all_plot-results.py results/file.xlsx --dual-axis --ylabel-left "Voltage (V)" --ylabel-right "Temperature (°C)"
+
 Requirements:
     pip install matplotlib pandas openpyxl
 """
@@ -97,7 +100,8 @@ def calculate_axis_limits(data, headroom_percent: float = 10):
 
 
 def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False,
-                title: str = None, save_path: str = None):
+                title: str = None, save_path: str = None, ylabel_left: str = None,
+                ylabel_right: str = None):
     """
     Plot measurement results.
 
@@ -107,6 +111,8 @@ def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False
         dual_axis: Use dual y-axes for different scales
         title: Plot title
         save_path: Path to save the plot image
+        ylabel_left: Custom label for left y-axis (dual-axis mode only)
+        ylabel_right: Custom label for right y-axis (dual-axis mode only)
     """
     # Get elapsed time column
     if 'Elapsed Time (hr)' not in df.columns:
@@ -144,7 +150,10 @@ def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False
         line1 = ax1.plot(x_data, df[col1], color=colors[0], linewidth=1,
                         label=col1, marker='', linestyle='-')
         ax1.set_xlabel('Elapsed Time (hr)', fontsize=12)
-        ax1.set_ylabel(col1, color=colors[0], fontsize=12)
+
+        # Use custom label if provided, otherwise use column name
+        left_label = ylabel_left if ylabel_left else col1
+        ax1.set_ylabel(left_label, color=colors[0], fontsize=12)
         ax1.tick_params(axis='y', labelcolor=colors[0])
 
         # Scale left y-axis to data range with headroom
@@ -162,14 +171,18 @@ def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False
             lines += line
 
         if len(plot_columns) == 2:
-            ax2.set_ylabel(plot_columns[1], color=colors[1], fontsize=12)
+            # Use custom label if provided, otherwise use column name
+            right_label = ylabel_right if ylabel_right else plot_columns[1]
+            ax2.set_ylabel(right_label, color=colors[1], fontsize=12)
             ax2.tick_params(axis='y', labelcolor=colors[1])
 
             # Scale right y-axis to data range with headroom
             y2_min, y2_max = calculate_axis_limits(df[plot_columns[1]])
             ax2.set_ylim(y2_min, y2_max)
         else:
-            ax2.set_ylabel('Other Measurements', fontsize=12)
+            # Use custom label if provided, otherwise use generic label
+            right_label = ylabel_right if ylabel_right else 'Other Measurements'
+            ax2.set_ylabel(right_label, fontsize=12)
 
             # For multiple columns on right axis, find overall min/max
             all_right_data = pd.concat([df[col] for col in plot_columns[1:]])
@@ -321,13 +334,19 @@ Examples:
   python GENERAL_all_plot-results.py results/Result_FINAL.xlsx
 
   # Plot specific columns
-  python GENERAL_all_plot-results.py results/file.xlsx -c "Vrms CH1 (V)" "Temperature (C)"
+  python GENERAL_all_plot-results.py results/file.xlsx -c "Watts (W)" "kWh"
 
   # Use dual y-axis for different scales
   python GENERAL_all_plot-results.py results/file.xlsx --dual-axis
 
+  # Use dual y-axis with custom labels
+  python GENERAL_all_plot-results.py results/file.xlsx --dual-axis --ylabel-left "Voltage (V)" --ylabel-right "Temperature (°C)"
+
   # Plot in separate subplots
   python GENERAL_all_plot-results.py results/file.xlsx --subplots
+
+  # Plot specific columns with dual y-axis and custom labels
+  python GENERAL_all_plot-results.py results/file.xlsx --dual-axis -c "Vrms (V)" "Temp Ch1 (°C)" --yl "Voltage" --yr "Temperature"
 
   # Save plot to file
   python GENERAL_all_plot-results.py results/file.xlsx -o output.png
@@ -341,6 +360,10 @@ Examples:
                        help='Specific columns to plot')
     parser.add_argument('--dual-axis', '-d', action='store_true',
                        help='Use dual y-axes for different scales')
+    parser.add_argument('--ylabel-left', '--yl', metavar='LABEL',
+                       help='Custom label for left y-axis (use with --dual-axis)')
+    parser.add_argument('--ylabel-right', '--yr', metavar='LABEL',
+                       help='Custom label for right y-axis (use with --dual-axis)')
     parser.add_argument('--subplots', '-s', action='store_true',
                        help='Plot each measurement in separate subplots')
     parser.add_argument('--output', '-o', help='Save plot to file')
@@ -392,7 +415,8 @@ Examples:
         plot_subplots(df, columns=args.columns, title=title, save_path=args.output)
     else:
         plot_results(df, columns=args.columns, dual_axis=args.dual_axis,
-                    title=title, save_path=args.output)
+                    title=title, save_path=args.output,
+                    ylabel_left=args.ylabel_left, ylabel_right=args.ylabel_right)
 
 
 if __name__ == "__main__":

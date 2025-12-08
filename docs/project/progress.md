@@ -225,6 +225,7 @@ Currently establishing project infrastructure and first instrument control modul
 - 新增 AT4516 使用範例腳本
 - 建立程式碼架構說明文件 (CODE_ARCHITECTURE_EXPLAINED.md)
 - 所有 PAPABIN 腳本新增垂直刻度設定 (0.2 V/div) 確保量測一致性
+- 繪圖腳本新增自訂 Y 軸標籤功能 (--ylabel-left, --ylabel-right)
 
 ---
 
@@ -238,6 +239,7 @@ Currently establishing project infrastructure and first instrument control modul
 - Added AT4516 example usage script
 - Created code architecture explanation document (CODE_ARCHITECTURE_EXPLAINED.md)
 - Added vertical scale configuration (0.2 V/div) to all PAPABIN scripts for measurement consistency
+- Added custom y-axis label feature to plotting script (--ylabel-left, --ylabel-right)
 
 ### 2025-11-20
 - 簡化輸出檔案命名格式
