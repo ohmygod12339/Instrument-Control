@@ -792,6 +792,8 @@ print(f"  Vertical scale confirmed: {current_scale*1000:.1f} mV/div")
 - 使用者提供的示波器當前設定
 - DSOX4034A Programmer's Guide - Channel configuration
 
+**Git 提交 / Git Commit**: `2ef4bd5` - Add vertical scale configuration to PAPABIN scripts and architecture documentation
+
 ---
 
 ## Git 提交歷史 / Git Commit History
