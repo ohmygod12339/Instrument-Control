@@ -705,6 +705,8 @@ python PAPABIN_dsox4034a-at4516_vrms-fast-temp.py
 - Anbai AT4516 User Manual (35 pages, Chinese)
 - pyserial Documentation
 
+**Git 提交 / Git Commit**: `6d49ba5` - Add Anbai AT4516 temperature meter module and combined logger
+
 ---
 
 ## Git 提交歷史 / Git Commit History
