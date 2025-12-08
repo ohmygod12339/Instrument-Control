@@ -534,6 +534,179 @@ Result_20251120_143052_FINAL.xlsx
 
 ---
 
+## 2025-12-08
+
+### Session - Anbai AT4516 溫度計模組實作與除錯
+
+**時間 / Time**: 全天
+
+**工作內容 / Work Done**:
+
+1. **建立 AT4516 儀器控制模組**
+   - 建立 `instruments/anbai/` 目錄
+   - 實作完整的 AT4516 控制類別
+   - 支援 8 通道溫度讀取 (K-type 熱電偶)
+   - 支援多種熱電偶類型 (TC-K, TC-J, TC-T, TC-E, TC-R, TC-S, TC-B, TC-N)
+   - 實作比較器功能 (上下限設定)
+
+2. **除錯 RS-232 通訊問題**
+   - **問題 1**: ModuleNotFoundError: No module named 'serial'
+     - 解決: 安裝 pyserial 套件
+   - **問題 2**: 連線逾時 (TimeoutError)
+     - 診斷: 測試所有波特率 (9600, 19200, 38400, 57600, 115200)
+     - 解決: 修正 DEFAULT_BAUDRATE 從 115200 → 9600
+   - **問題 3**: 第二次 *IDN? 查詢失敗
+     - 診斷: AT4516 處理速度慢，需要指令間延遲
+     - 解決: 在所有 write() 和 query() 加入 0.15s 延遲
+
+3. **修正 SCPI 指令序列問題**
+   - **問題 4**: 溫度讀取顯示 -100000.0°C (儀器前面板顯示正常 24°C)
+     - 診斷: 閱讀 35 頁 AT4516 使用手冊
+     - 發現: 量測進行中時，設定指令會被忽略
+     - 解決: 實作正確序列 STOP → CONFIGURE → START
+   - **問題 5**: 開機後首次執行返回 -100000.0，第二次執行正常
+     - 診斷: START 後需等待第一個量測週期完成
+     - 解決: 在 start_measurement() 加入等待時間和虛讀
+     - 根據取樣率計算等待時間 (SLOW: 1.5s, MED: 1.0s, FAST: 1.0s)
+
+4. **建立輔助方法和文件**
+   - 新增 `configure_and_start()` 方法統一初始化流程
+   - 建立 `examples/at4516_example.py` 範例腳本
+   - 建立 `docs/AT4516_Quick_Reference.md` 快速參考文件
+
+5. **建立組合式資料記錄器**
+   - 建立 `PAPABIN_dsox4034a-at4516_vrms-fast-temp.py`
+   - 結合 DSOX4034A (Vrms) + AT4516 (溫度 Ch1-4)
+   - 取樣間隔: 1 秒
+   - Excel 輸出: Timestamp, Vrms, Temp1-4, Elapsed(ms), Elapsed(hr)
+   - 使用緩衝寫入機制 (save_interval=10)
+
+6. **清理工作區**
+   - 刪除所有測試腳本 (test_at4516_*.py)
+   - 保持工作區整潔
+
+**技術決策 / Technical Decisions**:
+
+1. **AT4516 波特率選擇: 9600**
+   - **原因**: 儀器實際使用 9600 baud (非手冊說明的 115200)
+   - **驗證**: 透過系統性測試所有波特率確認
+
+2. **指令間延遲: 0.15 秒**
+   - **原因**: AT4516 處理 SCPI 指令較慢
+   - **效果**: 確保每個指令完整處理
+   - **權衡**: 略微降低讀取速度，但提高可靠性
+
+3. **實作 configure_and_start() 輔助方法**
+   - **原因**: 正確初始化序列複雜且容易出錯
+   - **效果**: 使用者只需一行程式碼即可完成初始化
+   - **包含**: STOP → 設定熱電偶類型 → 設定取樣率 → START → 等待 → 虛讀
+
+4. **虛讀機制**
+   - **原因**: 儀器 START 後需要完成首次量測週期
+   - **實作**: 根據取樣率等待適當時間，然後執行一次虛讀
+   - **效果**: 開機後首次執行即可獲得正確讀值
+
+5. **組合式記錄器設計**
+   - **取樣間隔**: 1 秒 (而非原本的 100ms)
+   - **理由**: 溫度變化較慢，1 秒足夠
+   - **資料格式**: 8 欄位 (時間戳、電壓、4 個溫度、經過時間)
+
+**程式碼變更 / Code Changes**:
+
+1. **instruments/anbai/at4516.py**:
+   - `DEFAULT_BAUDRATE = 9600` (line 27)
+   - `inter_command_delay` 參數加入 `__init__()` (line 56)
+   - `write()` 方法加入延遲 (line 90)
+   - `query()` 方法加入延遲 (lines 99-100)
+   - `connect()` 方法加入 STOP 指令 (line 117)
+   - `start_measurement()` 加入 wait_for_reading 參數和虛讀邏輯 (lines 246-266)
+   - 新增 `configure_and_start()` 方法 (lines 286-328)
+
+2. **examples/at4516_example.py**:
+   - 所有範例更新為使用 `configure_and_start()` 方法
+   - 加入錯誤值檢查 (temp > -100000)
+
+3. **新增檔案**:
+   - `instruments/anbai/__init__.py`
+   - `instruments/anbai/at4516.py`
+   - `examples/at4516_example.py`
+   - `docs/AT4516_Quick_Reference.md`
+   - `PAPABIN_dsox4034a-at4516_vrms-fast-temp.py`
+
+4. **刪除檔案**:
+   - `test_at4516_connection.py`
+   - `test_at4516_commands.py`
+   - `test_at4516_channels.py`
+   - `test_at4516_fix.py`
+
+**除錯過程 / Debugging Process**:
+
+1. **系統性波特率測試**
+   - 建立診斷腳本測試所有常用波特率
+   - 發現 9600 baud 成功連線
+   - 確認與手冊不符 (手冊說明 115200)
+
+2. **SCPI 指令序列研究**
+   - 閱讀完整 35 頁使用手冊
+   - 找到關鍵資訊: 量測進行中指令被忽略
+   - 建立測試腳本驗證 STOP → SET → START 序列
+
+3. **開機初始化問題分析**
+   - 觀察: 首次執行錯誤，第二次執行正常
+   - 假設: 需要虛讀清除緩衝區 (使用者建議)
+   - 實作: 等待 + 虛讀機制
+   - 驗證: 開機後首次執行即可正常
+
+**遇到的問題 / Problems Encountered**:
+
+1. **手冊與實際不符**
+   - 手冊說明支援 115200 baud
+   - 實際儀器使用 9600 baud
+   - 解決: 透過實測確認
+
+2. **指令回應延遲**
+   - AT4516 處理指令較慢
+   - 連續指令會失敗
+   - 解決: 加入固定延遲
+
+3. **設定指令被忽略**
+   - 量測進行中無法設定
+   - 解決: 先 STOP 再設定
+
+4. **開機後首次讀取錯誤**
+   - START 後立即讀取返回 -100000.0
+   - 解決: 等待量測週期完成 + 虛讀
+
+**使用方式 / Usage**:
+
+```python
+from instruments.anbai import AT4516
+
+# 基本使用
+with AT4516() as meter:
+    # 一行初始化 (CRITICAL!)
+    meter.configure_and_start(tc_type='TC-K', rate='FAST', unit='CEL')
+
+    # 讀取所有通道
+    temps = meter.read_all_channels()
+    for i, temp in enumerate(temps[:8], start=1):
+        print(f"Channel {i}: {temp:.1f}°C")
+
+# 組合式記錄器
+python PAPABIN_dsox4034a-at4516_vrms-fast-temp.py
+```
+
+**下一步 / Next Steps**:
+- 測試組合式資料記錄器實際運行
+- 驗證 1 秒取樣間隔的準確性
+- 確認溫度讀取穩定性
+
+**參考資源 / References**:
+- Anbai AT4516 User Manual (35 pages, Chinese)
+- pyserial Documentation
+
+---
+
 ## Git 提交歷史 / Git Commit History
 
 (Git commits will be recorded here as they are made)

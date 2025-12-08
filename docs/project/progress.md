@@ -126,21 +126,53 @@ Currently establishing project infrastructure and first instrument control modul
   - [x] Display control
   - [x] Error handling
 
+### Phase 5: Anbai AT4516 溫度計模組實作 / Anbai AT4516 Temperature Meter Implementation (✅ Completed 2025-12-08)
+
+**完成項目**:
+- [x] 建立 AT4516 儀器類別
+  - [x] RS-232 連線管理 (9600 baud)
+  - [x] 8 通道溫度讀取
+  - [x] 熱電偶類型設定 (TC-K, TC-J, TC-T, TC-E, TC-R, TC-S, TC-B, TC-N)
+  - [x] 取樣率設定 (SLOW/MED/FAST)
+  - [x] 比較器 (上下限) 功能
+  - [x] 指令間延遲處理 (0.15s)
+  - [x] 正確初始化序列 (STOP → CONFIGURE → START)
+  - [x] 開機後虛讀處理 (wait + dummy read)
+- [x] 建立使用範例腳本 (examples/at4516_example.py)
+- [x] 建立快速參考文件 (docs/AT4516_Quick_Reference.md)
+- [x] 建立組合式資料記錄器 (DSOX4034A + AT4516)
+
+**Completed Items**:
+- [x] Create AT4516 instrument class
+  - [x] RS-232 connection management (9600 baud)
+  - [x] 8-channel temperature reading
+  - [x] Thermocouple type configuration (TC-K, TC-J, TC-T, TC-E, TC-R, TC-S, TC-B, TC-N)
+  - [x] Sampling rate configuration (SLOW/MED/FAST)
+  - [x] Comparator (high/low limit) functions
+  - [x] Inter-command delay handling (0.15s)
+  - [x] Correct initialization sequence (STOP → CONFIGURE → START)
+  - [x] Post-power-on dummy read handling (wait + dummy read)
+- [x] Create example usage script (examples/at4516_example.py)
+- [x] Create quick reference documentation (docs/AT4516_Quick_Reference.md)
+- [x] Create combined data logger (DSOX4034A + AT4516)
+
 ## 下一步計畫 / Next Steps
 
-1. 測試 Agilent 34405A 模組功能
-2. 建立 34405A 使用範例腳本
-3. 考慮新增更多量測參數 (Vpp, Freq, etc.)
-4. 開發其他儀器控制模組
-5. 建立完整的測試套件
+1. 測試組合式資料記錄器 (PAPABIN_dsox4034a-at4516_vrms-fast-temp.py)
+2. 測試 Agilent 34405A 模組功能
+3. 建立 34405A 使用範例腳本
+4. 考慮新增更多量測參數 (Vpp, Freq, etc.)
+5. 開發其他儀器控制模組
+6. 建立完整的測試套件
 
 ---
 
-1. Test Agilent 34405A module functionality
-2. Create 34405A usage example scripts
-3. Consider adding more measurement parameters (Vpp, Freq, etc.)
-4. Develop control modules for other instruments
-5. Create comprehensive test suite
+1. Test combined data logger (PAPABIN_dsox4034a-at4516_vrms-fast-temp.py)
+2. Test Agilent 34405A module functionality
+3. Create 34405A usage example scripts
+4. Consider adding more measurement parameters (Vpp, Freq, etc.)
+5. Develop control modules for other instruments
+6. Create comprehensive test suite
 
 ## 技術債務與未來改進 / Technical Debt
 
@@ -181,6 +213,27 @@ Currently establishing project infrastructure and first instrument control modul
 - [Keysight Official Python Guide](https://docs.keysight.com/kkbopen/getting-started-automate-keysight-instruments-using-python-3-9-845872587.html)
 
 ## 更新日誌 / Update Log
+
+### 2025-12-08
+- 新增 Anbai AT4516 8 通道溫度計控制模組
+- 修正 RS-232 通訊問題 (波特率 9600, 指令間延遲 0.15s)
+- 實作正確的 SCPI 初始化序列 (STOP → CONFIGURE → START)
+- 解決開機後首次讀取問題 (虛讀機制)
+- 新增 configure_and_start() 輔助方法簡化初始化
+- 建立組合式資料記錄器 PAPABIN_dsox4034a-at4516_vrms-fast-temp.py
+- 新增 AT4516 快速參考文件
+- 新增 AT4516 使用範例腳本
+
+---
+
+- Added Anbai AT4516 8-channel temperature meter control module
+- Fixed RS-232 communication issues (9600 baud, 0.15s inter-command delay)
+- Implemented correct SCPI initialization sequence (STOP → CONFIGURE → START)
+- Resolved post-power-on first read issue (dummy read mechanism)
+- Added configure_and_start() helper method for simplified initialization
+- Created combined data logger PAPABIN_dsox4034a-at4516_vrms-fast-temp.py
+- Added AT4516 quick reference documentation
+- Added AT4516 example usage script
 
 ### 2025-11-20
 - 簡化輸出檔案命名格式
