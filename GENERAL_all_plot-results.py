@@ -23,6 +23,12 @@ Usage:
     # Use dual y-axis with custom labels
     python GENERAL_all_plot-results.py results/file.xlsx --dual-axis --ylabel-left "Voltage (V)" --ylabel-right "Temperature (°C)"
 
+    # Custom grid intervals (every 0.5 hr on x-axis, every 10 units on y-axis)
+    python GENERAL_all_plot-results.py results/file.xlsx --grid-x 0.5 --grid-y 10
+
+    # Enable minor grid lines
+    python GENERAL_all_plot-results.py results/file.xlsx --grid-minor
+
 Requirements:
     pip install matplotlib pandas openpyxl
 """
@@ -32,7 +38,7 @@ import os
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.ticker import AutoMinorLocator
+from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 import argparse
 
 
@@ -101,7 +107,8 @@ def calculate_axis_limits(data, headroom_percent: float = 10):
 
 def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False,
                 title: str = None, save_path: str = None, ylabel_left: str = None,
-                ylabel_right: str = None):
+                ylabel_right: str = None, grid_x: float = None, grid_y_left: float = None,
+                grid_y_right: float = None, grid_minor: bool = False):
     """
     Plot measurement results.
 
@@ -113,6 +120,10 @@ def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False
         save_path: Path to save the plot image
         ylabel_left: Custom label for left y-axis (dual-axis mode only)
         ylabel_right: Custom label for right y-axis (dual-axis mode only)
+        grid_x: Major grid interval for x-axis (None for auto)
+        grid_y_left: Major grid interval for left/main y-axis (None for auto)
+        grid_y_right: Major grid interval for right y-axis (None for auto, dual-axis only)
+        grid_minor: Show minor grid lines
     """
     # Get elapsed time column
     if 'Elapsed Time (hr)' not in df.columns:
@@ -218,9 +229,45 @@ def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False
         plt.title('Measurement Results', fontsize=14)
 
     # Grid and styling
-    ax1.grid(True, alpha=0.3)
-    ax1.xaxis.set_minor_locator(AutoMinorLocator())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator())
+    # Configure x-axis grid
+    if grid_x is not None:
+        ax1.xaxis.set_major_locator(MultipleLocator(grid_x))
+        print(f"\nGrid configuration:")
+        print(f"  X-axis major grid: every {grid_x} hr")
+    else:
+        ax1.xaxis.set_minor_locator(AutoMinorLocator())
+
+    # Configure y-axis grid (left/main axis)
+    if grid_y_left is not None:
+        ax1.yaxis.set_major_locator(MultipleLocator(grid_y_left))
+        if grid_x is None:
+            print(f"\nGrid configuration:")
+        print(f"  Y-axis (left) major grid: every {grid_y_left}")
+    else:
+        ax1.yaxis.set_minor_locator(AutoMinorLocator())
+
+    # Main grid
+    ax1.grid(True, which='major', alpha=0.3, linewidth=0.8)
+
+    # Minor grid (if requested)
+    if grid_minor:
+        ax1.grid(True, which='minor', alpha=0.15, linewidth=0.5, linestyle=':')
+        if grid_x is None:
+            ax1.xaxis.set_minor_locator(AutoMinorLocator())
+        if grid_y_left is None:
+            ax1.yaxis.set_minor_locator(AutoMinorLocator())
+        print(f"  Minor grid: enabled")
+
+    # Configure right y-axis grid (dual-axis mode only)
+    if dual_axis and len(plot_columns) >= 2:
+        if grid_y_right is not None:
+            ax2.yaxis.set_major_locator(MultipleLocator(grid_y_right))
+            print(f"  Y-axis (right) major grid: every {grid_y_right}")
+        else:
+            ax2.yaxis.set_minor_locator(AutoMinorLocator())
+
+        # Right axis grid (only for major ticks to avoid clutter)
+        ax2.grid(False)  # Disable right axis grid to avoid overlap with left
 
     # Adjust layout
     plt.tight_layout()
@@ -348,6 +395,18 @@ Examples:
   # Plot specific columns with dual y-axis and custom labels
   python GENERAL_all_plot-results.py results/file.xlsx --dual-axis -c "Vrms (V)" "Temp Ch1 (°C)" --yl "Voltage" --yr "Temperature"
 
+  # Custom grid intervals (x-axis every 0.5 hr, y-axis every 10 units)
+  python GENERAL_all_plot-results.py results/file.xlsx --grid-x 0.5 --grid-y 10
+
+  # Dual y-axis with different grid intervals for each axis
+  python GENERAL_all_plot-results.py results/file.xlsx --dual-axis --grid-x 1 --grid-y 5 --grid-y-right 50
+
+  # Enable minor grid lines
+  python GENERAL_all_plot-results.py results/file.xlsx --grid-minor
+
+  # Combine all features
+  python GENERAL_all_plot-results.py results/file.xlsx --dual-axis --yl "Voltage (V)" --yr "Temp (°C)" --gx 0.5 --gy 0.1 --gyr 5 --gm
+
   # Save plot to file
   python GENERAL_all_plot-results.py results/file.xlsx -o output.png
         """
@@ -364,6 +423,14 @@ Examples:
                        help='Custom label for left y-axis (use with --dual-axis)')
     parser.add_argument('--ylabel-right', '--yr', metavar='LABEL',
                        help='Custom label for right y-axis (use with --dual-axis)')
+    parser.add_argument('--grid-x', '--gx', type=float, metavar='INTERVAL',
+                       help='Major grid interval for x-axis (e.g., 0.5 for every 0.5 hr)')
+    parser.add_argument('--grid-y', '--gy', type=float, metavar='INTERVAL',
+                       help='Major grid interval for y-axis (or left y-axis in dual mode)')
+    parser.add_argument('--grid-y-right', '--gyr', type=float, metavar='INTERVAL',
+                       help='Major grid interval for right y-axis (dual-axis mode only)')
+    parser.add_argument('--grid-minor', '--gm', action='store_true',
+                       help='Show minor grid lines')
     parser.add_argument('--subplots', '-s', action='store_true',
                        help='Plot each measurement in separate subplots')
     parser.add_argument('--output', '-o', help='Save plot to file')
@@ -416,7 +483,9 @@ Examples:
     else:
         plot_results(df, columns=args.columns, dual_axis=args.dual_axis,
                     title=title, save_path=args.output,
-                    ylabel_left=args.ylabel_left, ylabel_right=args.ylabel_right)
+                    ylabel_left=args.ylabel_left, ylabel_right=args.ylabel_right,
+                    grid_x=args.grid_x, grid_y_left=args.grid_y,
+                    grid_y_right=args.grid_y_right, grid_minor=args.grid_minor)
 
 
 if __name__ == "__main__":

@@ -226,6 +226,7 @@ Currently establishing project infrastructure and first instrument control modul
 - 建立程式碼架構說明文件 (CODE_ARCHITECTURE_EXPLAINED.md)
 - 所有 PAPABIN 腳本新增垂直刻度設定 (0.2 V/div) 確保量測一致性
 - 繪圖腳本新增自訂 Y 軸標籤功能 (--ylabel-left, --ylabel-right)
+- 繪圖腳本新增可自訂網格間距功能 (--grid-x, --grid-y, --grid-y-right, --grid-minor)
 
 ---
 
@@ -240,6 +241,7 @@ Currently establishing project infrastructure and first instrument control modul
 - Created code architecture explanation document (CODE_ARCHITECTURE_EXPLAINED.md)
 - Added vertical scale configuration (0.2 V/div) to all PAPABIN scripts for measurement consistency
 - Added custom y-axis label feature to plotting script (--ylabel-left, --ylabel-right)
+- Added customizable grid intervals to plotting script (--grid-x, --grid-y, --grid-y-right, --grid-minor)
 
 ### 2025-11-20
 - 簡化輸出檔案命名格式

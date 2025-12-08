@@ -890,6 +890,126 @@ python GENERAL_all_plot-results.py results/file.xlsx --dual-axis \
 
 ---
 
+## 2025-12-08 (Session 4)
+
+### Session - Add Customizable Grid Intervals to Plotting Script
+
+**時間 / Time**: 深夜
+
+**工作內容 / Work Done**:
+
+1. **新增可自訂網格間距功能到繪圖腳本**
+   - 新增 `--grid-x` / `--gx` 參數: X 軸主網格間距 (小時)
+   - 新增 `--grid-y` / `--gy` 參數: Y 軸 (或左側 Y 軸) 主網格間距
+   - 新增 `--grid-y-right` / `--gyr` 參數: 右側 Y 軸主網格間距 (雙軸模式)
+   - 新增 `--grid-minor` / `--gm` 參數: 啟用次網格線
+   - 使用 matplotlib 的 `MultipleLocator` 實現精確網格控制
+
+**使用者需求 / User Request**:
+使用者希望能夠根據資料範圍自訂網格間距，例如每 5、10 或 50 個單位顯示網格線，而不是使用自動生成的間距。
+
+**技術實作 / Technical Implementation**:
+
+1. **Import 更新**:
+   ```python
+   from matplotlib.ticker import AutoMinorLocator, MultipleLocator
+   ```
+
+2. **函數簽章更新**:
+   ```python
+   def plot_results(df: pd.DataFrame, columns: list = None, dual_axis: bool = False,
+                   title: str = None, save_path: str = None, ylabel_left: str = None,
+                   ylabel_right: str = None, grid_x: float = None, grid_y_left: float = None,
+                   grid_y_right: float = None, grid_minor: bool = False):
+   ```
+
+3. **網格配置邏輯**:
+   ```python
+   # Configure x-axis grid
+   if grid_x is not None:
+       ax1.xaxis.set_major_locator(MultipleLocator(grid_x))
+   else:
+       ax1.xaxis.set_minor_locator(AutoMinorLocator())
+
+   # Configure y-axis grid (left/main axis)
+   if grid_y_left is not None:
+       ax1.yaxis.set_major_locator(MultipleLocator(grid_y_left))
+   else:
+       ax1.yaxis.set_minor_locator(AutoMinorLocator())
+
+   # Main grid
+   ax1.grid(True, which='major', alpha=0.3, linewidth=0.8)
+
+   # Minor grid (if requested)
+   if grid_minor:
+       ax1.grid(True, which='minor', alpha=0.15, linewidth=0.5, linestyle=':')
+   ```
+
+4. **右側 Y 軸網格 (雙軸模式)**:
+   ```python
+   if dual_axis and len(plot_columns) >= 2:
+       if grid_y_right is not None:
+           ax2.yaxis.set_major_locator(MultipleLocator(grid_y_right))
+       else:
+           ax2.yaxis.set_minor_locator(AutoMinorLocator())
+       ax2.grid(False)  # Disable right axis grid to avoid overlap
+   ```
+
+**命令列參數 / Command-Line Arguments**:
+```bash
+--grid-x INTERVAL, --gx INTERVAL      # X 軸主網格間距 (小時)
+--grid-y INTERVAL, --gy INTERVAL      # Y 軸主網格間距
+--grid-y-right INTERVAL, --gyr INTERVAL  # 右側 Y 軸主網格間距
+--grid-minor, --gm                    # 啟用次網格線
+```
+
+**使用範例 / Usage Examples**:
+
+```bash
+# 自訂網格間距 (X 軸每 0.5 小時，Y 軸每 10 單位)
+python GENERAL_all_plot-results.py results/file.xlsx --grid-x 0.5 --grid-y 10
+
+# 雙 Y 軸模式，每個軸使用不同間距
+python GENERAL_all_plot-results.py results/file.xlsx --dual-axis \
+    --grid-x 1 --grid-y 5 --grid-y-right 50
+
+# 啟用次網格線
+python GENERAL_all_plot-results.py results/file.xlsx --grid-minor
+
+# 完整範例：雙軸 + 自訂標籤 + 自訂網格
+python GENERAL_all_plot-results.py results/file.xlsx --dual-axis \
+    --yl "Voltage (V)" --yr "Temp (°C)" \
+    --gx 0.5 --gy 0.1 --gyr 5 --gm
+```
+
+**網格樣式 / Grid Styling**:
+- **主網格**: alpha=0.3, linewidth=0.8, 實線
+- **次網格**: alpha=0.15, linewidth=0.5, 虛線 (':')
+
+**預設行為 / Default Behavior**:
+- 若未指定網格間距: 使用 matplotlib 的 `AutoMinorLocator` 自動配置
+- 主網格: 總是顯示
+- 次網格: 僅在使用 `--grid-minor` 時顯示
+- 右側 Y 軸網格: 關閉以避免與左側重疊
+
+**程式碼變更 / Code Changes**:
+- `GENERAL_all_plot-results.py` (line 41): 新增 `MultipleLocator` import
+- `GENERAL_all_plot-results.py` (lines 109-111): 函數簽章新增 4 個參數
+- `GENERAL_all_plot-results.py` (lines 232-264): 新增網格配置邏輯
+- `GENERAL_all_plot-results.py` (lines 426-433): 新增 4 個命令列參數
+- `GENERAL_all_plot-results.py` (lines 486-488): 傳遞參數到函數
+- `GENERAL_all_plot-results.py` (lines 23-26, 398-408): 新增使用範例
+
+**效益 / Benefits**:
+1. **靈活性**: 可根據資料範圍調整網格密度
+2. **可讀性**: 適當的網格間距提升圖表易讀性
+3. **專業性**: 符合科學出版的圖表標準
+4. **向後相容**: 不影響現有使用方式，預設行為不變
+
+**Git 提交 / Git Commit**: `d735622` - Add customizable grid intervals to plotting script
+
+---
+
 ## Git 提交歷史 / Git Commit History
 
 (Git commits will be recorded here as they are made)
