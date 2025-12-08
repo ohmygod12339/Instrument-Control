@@ -169,6 +169,12 @@ class DualInstrumentLoggerAD2(BaseDataLogger):
         # Ensure Channel 1 is on
         self.scope.channel_on(1)
 
+        # Set vertical scale for consistent measurements
+        print("Setting vertical scale to 0.2 V/div (200 mV/div)...")
+        self.scope.set_channel_scale(1, 0.2)  # 200 mV/div
+        current_scale = self.scope.get_channel_scale(1)
+        print(f"  Vertical scale confirmed: {current_scale*1000:.1f} mV/div")
+
         # Set timebase to 5ms/div
         timebase_scale = 0.005  # 5ms = 0.005s
         print(f"Setting timebase to 5 ms/div...")

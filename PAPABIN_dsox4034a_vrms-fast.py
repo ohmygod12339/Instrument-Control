@@ -99,6 +99,13 @@ class FastVrmsLogger:
         # Ensure Channel 1 is on
         self.scope.channel_on(1)
 
+        # Set vertical scale for consistent measurements
+        # This ensures the same scale is used every time, regardless of manual settings
+        print("Setting vertical scale to 0.2 V/div (200 mV/div)...")
+        self.scope.set_channel_scale(1, 0.2)  # 200 mV/div
+        current_scale = self.scope.get_channel_scale(1)
+        print(f"  Vertical scale confirmed: {current_scale*1000:.1f} mV/div")
+
         # CRITICAL: Set timebase for fast measurements
         # Shorter timebase = less data to capture = faster measurements
         print(f"Setting timebase to {self.timebase_scale*1000:.1f} ms/div...")
@@ -261,7 +268,7 @@ class FastVrmsLogger:
         self.running = True
         self.last_copy_time = time.time()
 
-        target_interval = 0.1  # 100ms
+        target_interval = 1  # 1s
         next_measurement_time = time.time()
 
         try:
@@ -329,7 +336,7 @@ def signal_handler(signum, frame):
 def main():
     """Main entry point."""
     # Default values
-    default_resource = "TCPIP::192.168.2.60::INSTR"
+    default_resource = "TCPIP::192.168.2.73::INSTR"
     default_save_interval = 10
     default_timebase_ms = 5
     default_holdoff_ms = 5

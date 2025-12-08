@@ -709,6 +709,91 @@ python PAPABIN_dsox4034a-at4516_vrms-fast-temp.py
 
 ---
 
+## 2025-12-08 (Session 2)
+
+### Session - Add Vertical Scale Configuration to PAPABIN Scripts
+
+**時間 / Time**: 晚間
+
+**工作內容 / Work Done**:
+
+1. **建立完整程式碼架構說明文件**
+   - 建立 `docs/CODE_ARCHITECTURE_EXPLAINED.md`
+   - 逐行解釋 DSOX4034A、AT4516 和組合式記錄器的架構
+   - 包含通訊流程圖和設計模式說明
+   - 記錄除錯過程中學到的關鍵教訓
+
+2. **新增垂直刻度設定到所有 PAPABIN 腳本**
+   - 使用者發現問題: 手動設定示波器可能導致量測不一致
+   - 解決方案: 在應用程式碼中設定垂直刻度，而非模組中
+   - 設定值: 0.2 V/div (200 mV/div) - 與實驗室設定一致
+   - 更新的檔案:
+     - `PAPABIN_dsox4034a_vrms-fast.py`
+     - `PAPABIN_dsox4034a-at4516_vrms-fast-temp.py`
+     - `PAPABIN_dsox4034a-a34405a_vrms-temp.py`
+     - `PAPABIN_dsox4034a-ad2_vrms-temp.py`
+
+**技術決策 / Technical Decisions**:
+
+1. **垂直刻度設定位置**
+   - **應用層設定**: PAPABIN 腳本設定特定刻度
+   - **模組保持彈性**: dsox4034a.py 模組不設定預設值
+   - **原因**: 保持模組的通用性，允許其他應用使用不同刻度
+
+2. **設定順序**
+   ```python
+   self.scope.channel_on(1)           # 1. 啟用通道
+   self.scope.set_channel_scale(1, 0.2)  # 2. 設定垂直刻度
+   self.scope.set_timebase_scale(...)    # 3. 設定時基
+   self.scope.run()                      # 4. 開始運行
+   ```
+
+3. **驗證機制**
+   - 設定後立即查詢確認
+   - 顯示確認訊息給使用者
+   - 格式: `print(f"Vertical scale confirmed: {scale*1000:.1f} mV/div")`
+
+**使用者需求 / User Request**:
+
+使用者檢查示波器設定，發現當前設定為:
+- Channel 1 垂直刻度: 0.2 V/div
+- 耦合: DC
+- 觸發模式: EDGE, AUTO sweep
+- 觸發源: CHAN1, 0.0V
+
+**問題**:
+如果有人手動更改示波器設定，同一次量測可能會有不同的垂直刻度，導致不一致。
+
+**解決方案**:
+在每個 PAPABIN 腳本中明確設定垂直刻度，確保:
+1. **一致性**: 每次量測使用相同刻度
+2. **可重現性**: 腳本執行時自動設定正確刻度
+3. **獨立性**: 不依賴手動設定
+
+**程式碼變更 / Code Changes**:
+
+所有四個 PAPABIN 腳本都加入:
+```python
+# Set vertical scale for consistent measurements
+print("Setting vertical scale to 0.2 V/div (200 mV/div)...")
+self.scope.set_channel_scale(1, 0.2)  # 200 mV/div
+current_scale = self.scope.get_channel_scale(1)
+print(f"  Vertical scale confirmed: {current_scale*1000:.1f} mV/div")
+```
+
+**效益 / Benefits**:
+
+1. **量測一致性**: 所有量測使用相同的垂直刻度
+2. **可追溯性**: 記錄檔案明確顯示使用的刻度
+3. **自動化**: 無需手動設定示波器
+4. **錯誤預防**: 避免因人為設定錯誤導致的問題
+
+**參考資源 / References**:
+- 使用者提供的示波器當前設定
+- DSOX4034A Programmer's Guide - Channel configuration
+
+---
+
 ## Git 提交歷史 / Git Commit History
 
 (Git commits will be recorded here as they are made)

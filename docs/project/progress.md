@@ -223,6 +223,8 @@ Currently establishing project infrastructure and first instrument control modul
 - 建立組合式資料記錄器 PAPABIN_dsox4034a-at4516_vrms-fast-temp.py
 - 新增 AT4516 快速參考文件
 - 新增 AT4516 使用範例腳本
+- 建立程式碼架構說明文件 (CODE_ARCHITECTURE_EXPLAINED.md)
+- 所有 PAPABIN 腳本新增垂直刻度設定 (0.2 V/div) 確保量測一致性
 
 ---
 
@@ -234,6 +236,8 @@ Currently establishing project infrastructure and first instrument control modul
 - Created combined data logger PAPABIN_dsox4034a-at4516_vrms-fast-temp.py
 - Added AT4516 quick reference documentation
 - Added AT4516 example usage script
+- Created code architecture explanation document (CODE_ARCHITECTURE_EXPLAINED.md)
+- Added vertical scale configuration (0.2 V/div) to all PAPABIN scripts for measurement consistency
 
 ### 2025-11-20
 - 簡化輸出檔案命名格式

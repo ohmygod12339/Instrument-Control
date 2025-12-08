@@ -93,6 +93,11 @@ class VrmsTempLogger:
 
         # Configure oscilloscope for fast Vrms measurements
         self.scope.channel_on(1)
+
+        # Set vertical scale for consistent measurements
+        self.scope.set_channel_scale(1, 0.2)  # 200 mV/div
+        print(f"   Vertical scale: {self.scope.get_channel_scale(1)*1000:.1f} mV/div")
+
         self.scope.set_timebase_scale(0.005)  # 5ms/div for fast measurements
         self.scope.run()
 
@@ -382,7 +387,7 @@ def main():
     """Main entry point."""
     # Default values
     default_scope_resource = "TCPIP::192.168.2.73::INSTR"
-    default_temp_port = "COM10"
+    default_temp_port = "COM13"
     default_save_interval = 10
 
     # Show help if requested
