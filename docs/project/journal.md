@@ -886,6 +886,8 @@ python GENERAL_all_plot-results.py results/file.xlsx --dual-axis \
 3. **簡潔性**: 可簡化長欄位名稱
 4. **向後相容**: 不影響現有使用方式
 
+**Git 提交 / Git Commit**: `9e651b2` - Add custom y-axis label feature to plotting script
+
 ---
 
 ## Git 提交歷史 / Git Commit History
