@@ -1006,7 +1006,7 @@ python GENERAL_all_plot-results.py results/file.xlsx --dual-axis \
 3. **專業性**: 符合科學出版的圖表標準
 4. **向後相容**: 不影響現有使用方式，預設行為不變
 
-**Git 提交 / Git Commit**: `d735622` - Add customizable grid intervals to plotting script
+**Git 提交 / Git Commit**: `b17328c` - Add customizable grid intervals to plotting script
 
 ---
 
